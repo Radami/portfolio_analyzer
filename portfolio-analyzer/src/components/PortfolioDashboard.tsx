@@ -5,7 +5,6 @@ import { useStockData } from '../hooks/useStockData';
 import { Stock } from '../types';
 import { CSVImporter } from './CSVImporter';
 import { PortfolioSummary } from './PortfolioSummary';
-import { StockChart } from './StockChart';
 import { StockTable } from './StockTable';
 
 export const PortfolioDashboard: React.FC = () => {
@@ -80,20 +79,6 @@ export const PortfolioDashboard: React.FC = () => {
             </div>
           </div>
           
-          {/* Right panel for stock chart */}
-          {selectedStock && (
-            <div className="col-lg-4">
-              <div className="sticky-top" style={{ top: '1rem' }}>
-                <StockChart
-                  stock={selectedStock}
-                  stockData={stockData}
-                  loading={loading}
-                  error={error}
-                  onClose={handleCloseChart}
-                />
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

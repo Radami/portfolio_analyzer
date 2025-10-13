@@ -14,6 +14,7 @@ export interface Stock {
   dailyPL?: number;
   unrealizedPL?: number;
   percentOfNetLiq?: string;
+  tags?: string[];
 }
 
 export interface Portfolio {
@@ -40,3 +41,7 @@ export interface StockData {
   sp500Performance: number;
   chartData: ChartData;
 }
+
+export interface StockTags {
+    [ticker: string]: string[];
+  }

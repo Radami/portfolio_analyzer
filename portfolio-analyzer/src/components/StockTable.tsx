@@ -1,5 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useEffect, useState } from 'react';
+import { useStockTags } from '../hooks/useStockTags';
 import { Stock } from '../types';
 
 interface StockTableProps {
@@ -14,14 +15,48 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
   const [sortField, setSortField] = useState<SortField>('ticker');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [enrichedStocks, setEnrichedStocks] = useState<Stock[]>(stocks);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  
+  const { stockTags, getTagsForTicker, getAllTags } = useStockTags();
 
-  // Update stocks when props change
+  // Predefined colors for specific tags
+  const tagColorMap: Record<string, { bg: string; color: string; border?: string }> = {
+    Growth: { bg: '#FFD54F', color: '#3C2F00' },       // yellow
+    ETF: { bg: '#A5D6A7', color: '#0F3D18' },          // green
+    Value: { bg: '#64B5F6', color: '#0D2A40' },        // blue
+    Income: { bg: '#FFB74D', color: '#3C2200' },       // orange
+    Stock: { bg: '#B39DDB', color: '#2A1B47' }         // purple
+  };
+
+  const renderTagBadge = (tag: string) => {
+    const style = tagColorMap[tag] || { bg: '#e9ecef', color: '#212529', border: '1px solid #dee2e6' };
+    return (
+      <span
+        key={tag}
+        className="badge"
+        style={{
+          backgroundColor: style.bg,
+          color: style.color,
+          border: style.border,
+          fontWeight: 500
+        }}
+      >
+        {tag}
+      </span>
+    );
+  };
+
+  // Update stocks when props change and enrich with tags
   useEffect(() => {
-    setEnrichedStocks(stocks);
-  }, [stocks]);
+    const enriched = stocks.map(stock => ({
+      ...stock,
+      tags: getTagsForTicker(stock.ticker)
+    }));
+    setEnrichedStocks(enriched);
+  }, [stocks, getTagsForTicker]);
 
   const formatCurrency = (value: number) => {
-    if (!value || value <= 0) return 'N/A';
+    if (!value) return 'N/A';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -49,7 +84,15 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
     return sortDirection === 'asc' ? '↑' : '↓';
   };
 
-  const sortedStocks = [...enrichedStocks].sort((a, b) => {
+  // Filter stocks by selected tags (AND logic: must include all selected tags)
+  const filteredStocks = selectedTags.length === 0
+    ? enrichedStocks
+    : enrichedStocks.filter(stock => {
+        const stockTagsSet = new Set(stock.tags || []);
+        return selectedTags.every(tag => stockTagsSet.has(tag));
+      });
+
+  const sortedStocks = [...filteredStocks].sort((a, b) => {
     let aValue: any, bValue: any;
 
     switch (sortField) {
@@ -74,7 +117,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
         bValue = b.marketValue - b.costBasis;
         break;
       case 'percentOfPortfolio':
-        const totalValue = enrichedStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
+        const totalValue = filteredStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
         aValue = (a.marketValue / totalValue) * 100;
         bValue = (b.marketValue / totalValue) * 100;
         break;
@@ -104,12 +147,49 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
     return 0;
   });
 
-  const totalValue = enrichedStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
+  const totalValue = filteredStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
+  const allTags = getAllTags();
+
+  const isTagSelected = (tag: string) => selectedTags.includes(tag);
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => (
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    ));
+  };
+  const clearTags = () => setSelectedTags([]);
 
   return (
     <div className="card">
       <div className="card-header">
-        <h5 className="mb-0">Portfolio Holdings</h5>
+        <div className="d-flex flex-wrap align-items-center gap-2">
+          <h5 className="mb-0 me-2">Portfolio Holdings</h5>
+          {allTags.length > 0 && (
+            <div className="d-flex flex-wrap align-items-center gap-2">
+              {allTags.map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => toggleTag(tag)}
+                  style={{
+                    border: isTagSelected(tag) ? '2px solid #212529' : '1px solid #dee2e6',
+                    backgroundColor: (tagColorMap[tag]?.bg) || '#f8f9fa',
+                    color: (tagColorMap[tag]?.color) || '#212529',
+                    fontWeight: 500
+                  }}
+                  aria-pressed={isTagSelected(tag)}
+                >
+                  {tag}
+                </button>
+              ))}
+              {selectedTags.length > 0 && (
+                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={clearTags}>
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <div className="card-body">
         <div className="table-responsive">
@@ -122,6 +202,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                 >
                   Ticker {getSortIcon('ticker')}
                 </th>
+                <th>Tags</th>
                 <th 
                   className="cursor-pointer"
                   onClick={() => handleSort('position')}
@@ -165,12 +246,12 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                   Dividend Yield {getSortIcon('dividendYield')}
                 </th>
                 <th 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('percentOfPortfolio')}
+                    className="cursor-pointer"
+                    onClick={() => handleSort('percentOfPortfolio')}
                 >
-                  % of Portfolio {getSortIcon('percentOfPortfolio')}
+                    % of Portfolio {getSortIcon('percentOfPortfolio')}
                 </th>
-                <th>Actions</th>
+                
               </tr>
             </thead>
             <tbody>
@@ -182,6 +263,15 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                 return (
                   <tr key={stock.ticker} className="cursor-pointer">
                     <td className="fw-bold">{stock.ticker}</td>
+                    <td>
+                        {stock.tags && stock.tags.length > 0 ? (
+                        <div className="d-flex flex-wrap gap-1">
+                            {stock.tags.map(tag => renderTagBadge(tag))}
+                        </div>
+                        ) : (
+                        <span className="text-muted">No tags</span>
+                        )}
+                    </td>
                     <td>{stock.position.toLocaleString()}</td>
                     <td className="fw-bold">
                       {formatCurrency(currentPrice)}
@@ -198,26 +288,24 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                       {stock.dividendYield && stock.dividendYield > 0 ? formatPercentage(stock.dividendYield) : 'N/A'}
                     </td>
                     <td>{formatPercentage(percentOfPortfolio)}</td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-outline-primary"
-                        onClick={() => onStockSelect(stock)}
-                      >
-                        View Chart
-                      </button>
-                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        
-        {stocks.length === 0 && (
-          <div className="text-center py-4">
-            <p className="text-muted">No stocks in portfolio. Import a CSV file to get started.</p>
-          </div>
-        )}
+                
+                {filteredStocks.length === 0 && enrichedStocks.length > 0 && (
+                  <div className="text-center py-4">
+                    <p className="text-muted">No stocks match all selected tags.</p>
+                  </div>
+                )}
+                
+                {enrichedStocks.length === 0 && (
+                  <div className="text-center py-4">
+                    <p className="text-muted">No stocks in portfolio. Import a CSV file to get started.</p>
+                  </div>
+                )}
       </div>
     </div>
   );

@@ -65,6 +65,19 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
     }).format(value);
   };
 
+  const formatPrice = (price: number, currency?: string) => {
+    if (currency === 'JPY') {
+      if (!price) return 'N/A';
+      return new Intl.NumberFormat('ja-JP', {
+        style: 'currency',
+        currency: 'JPY',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(price);
+    }
+    return formatCurrency(price);
+  };
+
   const formatPercentage = (value: number) => {
     if (!value || !isFinite(value)) return 'N/A';
     return `${value.toFixed(2)}%`;
@@ -258,7 +271,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
               {sortedStocks.map((stock) => {
                 const unrealizedPL = stock.marketValue - stock.costBasis;
                 const percentOfPortfolio = (stock.marketValue / totalValue) * 100;
-                const currentPrice = stock.currentPrice || stock.marketValue / stock.position;
+                const currentPrice = stock.currentPrice;
                 
                 return (
                   <tr key={stock.ticker} className="cursor-pointer">
@@ -274,7 +287,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                     </td>
                     <td>{stock.position.toLocaleString()}</td>
                     <td className="fw-bold">
-                      {formatCurrency(currentPrice)}
+                      {formatPrice(currentPrice, stock.currency)}
                     </td>
                     <td>{formatCurrency(stock.marketValue)}</td>
                     <td>{formatCurrency(stock.costBasis)}</td>

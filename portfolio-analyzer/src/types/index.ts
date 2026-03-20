@@ -5,6 +5,7 @@ export interface Stock {
   marketValue: number;
   avgPrice: number;
   currentPrice: number;
+  currency?: string;
   peRatio?: number;
   dividendYield?: number;
   ytdPerformance?: number;

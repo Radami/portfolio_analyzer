@@ -34,7 +34,8 @@ export function parseIBStatement(csvText: string): Stock[] {
   const closePriceIdx = colNames.findIndex(h => h.toLowerCase() === 'close price');
   const valueIdx = colNames.findIndex(h => h.toLowerCase() === 'value');
 
-  if (symbolIdx === -1 || quantityIdx === -1 || costBasisIdx === -1 || valueIdx === -1) {
+  if (currencyIdx === -1 || symbolIdx === -1 || quantityIdx === -1 || costPriceIdx === -1 || 
+     costBasisIdx === -1 || closePriceIdx === -1 || valueIdx === -1) {
     throw new Error('Required columns not found in Open Positions section.');
   }
 
@@ -49,12 +50,12 @@ export function parseIBStatement(csvText: string): Stock[] {
     const fields = values.slice(2);
 
     const ticker = fields[symbolIdx];
-    const currency = currencyIdx !== -1 ? fields[currencyIdx] : 'USD';
+    const currency = fields[currencyIdx];
     const position = parseFloat(fields[quantityIdx]);
     const rawCostBasis = parseFloat(fields[costBasisIdx]);
     const rawMarketValue = parseFloat(fields[valueIdx]);
-    const rawAvgPrice = costPriceIdx !== -1 ? parseFloat(fields[costPriceIdx]) : NaN;
-    const rawCurrentPrice = closePriceIdx !== -1 ? parseFloat(fields[closePriceIdx]) : NaN;
+    const rawAvgPrice = parseFloat(fields[costPriceIdx]);
+    const rawCurrentPrice = parseFloat(fields[closePriceIdx]);
 
     if (!ticker || isNaN(position) || position <= 0 || isNaN(rawCostBasis) || isNaN(rawMarketValue)) {
       continue;

@@ -55,19 +55,18 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
     setEnrichedStocks(enriched);
   }, [stocks, getTagsForTicker]);
 
-  const formatCurrency = (value: number) => {
-    if (!value) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
-  };
-
-  const formatPrice = (price: number, currency?: string) => {
+  const formatCurrency = (price: number, currency?: string) => {
+    if (!price) return 'N/A';
+    if (currency === 'USD') {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(price);
+    }
     if (currency === 'JPY') {
-      if (!price) return 'N/A';
+      
       return new Intl.NumberFormat('ja-JP', {
         style: 'currency',
         currency: 'JPY',
@@ -75,7 +74,6 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
         maximumFractionDigits: 0,
       }).format(price);
     }
-    return formatCurrency(price);
   };
 
   const formatPercentage = (value: number) => {
@@ -287,10 +285,10 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                     </td>
                     <td>{stock.position.toLocaleString()}</td>
                     <td className="fw-bold">
-                      {formatPrice(currentPrice, stock.currency)}
+                      {formatCurrency(currentPrice, stock.currency)}
                     </td>
-                    <td>{formatCurrency(stock.marketValue)}</td>
-                    <td>{formatCurrency(stock.costBasis)}</td>
+                    <td>{formatCurrency(stock.marketValue, 'USD')}</td>
+                    <td>{formatCurrency(stock.costBasis, 'USD')}</td>
                     <td className={unrealizedPL >= 0 ? 'text-success' : 'text-danger'}>
                       {formatCurrency(unrealizedPL)}
                     </td>

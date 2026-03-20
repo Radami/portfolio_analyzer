@@ -55,14 +55,25 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
     setEnrichedStocks(enriched);
   }, [stocks, getTagsForTicker]);
 
-  const formatCurrency = (value: number) => {
-    if (!value) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
+  const formatCurrency = (price: number, currency?: string) => {
+    if (!price) return 'N/A';
+    if (currency === 'USD') {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(price);
+    }
+    if (currency === 'JPY') {
+      
+      return new Intl.NumberFormat('ja-JP', {
+        style: 'currency',
+        currency: 'JPY',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(price);
+    }
   };
 
   const formatPercentage = (value: number) => {
@@ -258,7 +269,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
               {sortedStocks.map((stock) => {
                 const unrealizedPL = stock.marketValue - stock.costBasis;
                 const percentOfPortfolio = (stock.marketValue / totalValue) * 100;
-                const currentPrice = stock.currentPrice || stock.marketValue / stock.position;
+                const currentPrice = stock.currentPrice;
                 
                 return (
                   <tr key={stock.ticker} className="cursor-pointer">
@@ -274,10 +285,10 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                     </td>
                     <td>{stock.position.toLocaleString()}</td>
                     <td className="fw-bold">
-                      {formatCurrency(currentPrice)}
+                      {formatCurrency(currentPrice, stock.currency)}
                     </td>
-                    <td>{formatCurrency(stock.marketValue)}</td>
-                    <td>{formatCurrency(stock.costBasis)}</td>
+                    <td>{formatCurrency(stock.marketValue, 'USD')}</td>
+                    <td>{formatCurrency(stock.costBasis, 'USD')}</td>
                     <td className={unrealizedPL >= 0 ? 'text-success' : 'text-danger'}>
                       {formatCurrency(unrealizedPL)}
                     </td>

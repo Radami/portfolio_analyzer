@@ -3,10 +3,12 @@ import React, { useState } from 'react';
 import { useSnapshots } from '../hooks/useSnapshots';
 import { PortfolioSummary } from './PortfolioSummary';
 import { StockTable } from './StockTable';
+import { TickerPerformancePanel } from './TickerPerformancePanel';
 
 export const PortfolioDashboard: React.FC = () => {
   const { snapshots, loading, error } = useSnapshots();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
 
   // Default to the latest snapshot; respect manual selection after that
   const effectiveIndex = selectedIndex ?? snapshots.length - 1;
@@ -64,16 +66,25 @@ export const PortfolioDashboard: React.FC = () => {
 
           {snapshot && (
             <div className="row">
-              <div className="col-12">
-                <div className="mb-4">
-                  <PortfolioSummary portfolio={snapshot.portfolio} />
-                </div>
-                <div>
-                  <StockTable
-                    stocks={snapshot.portfolio.stocks}
+              <div className="col-12 mb-4">
+                <PortfolioSummary portfolio={snapshot.portfolio} />
+              </div>
+              <div className={selectedTicker ? 'col-8' : 'col-12'}>
+                <StockTable
+                  stocks={snapshot.portfolio.stocks}
+                  selectedTicker={selectedTicker ?? undefined}
+                  onStockSelect={setSelectedTicker}
+                />
+              </div>
+              {selectedTicker && (
+                <div className="col-4" style={{ position: 'sticky', top: '1rem', alignSelf: 'flex-start' }}>
+                  <TickerPerformancePanel
+                    ticker={selectedTicker}
+                    snapshots={snapshots}
+                    onClose={() => setSelectedTicker(null)}
                   />
                 </div>
-              </div>
+              )}
             </div>
           )}
         </>

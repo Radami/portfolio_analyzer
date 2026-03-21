@@ -5,8 +5,6 @@ export interface Stock {
   marketValue: number;
   currentPrice: number;
   currency?: string;
-  peRatio?: number;
-  dividendYield?: number;
   tags?: string[];
 }
 

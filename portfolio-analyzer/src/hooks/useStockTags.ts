@@ -6,11 +6,8 @@ const STORAGE_KEY = 'portfolio-analyzer-tags';
 
 export const useStockTags = () => {
   const [stockTags, setStockTags] = useState<StockTags>(STOCK_TAGS);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-   
       setStockTags(STOCK_TAGS);
     }, []);
 
@@ -33,8 +30,6 @@ export const useStockTags = () => {
 
   return {
     stockTags,
-    loading,
-    error,
     getTagsForTicker,
     getAllTags
   };

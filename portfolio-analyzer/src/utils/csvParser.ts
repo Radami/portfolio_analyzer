@@ -29,12 +29,11 @@ export function parseIBStatement(csvText: string): Stock[] {
   const currencyIdx = colNames.findIndex(h => h.toLowerCase() === 'currency');
   const symbolIdx = colNames.findIndex(h => h.toLowerCase() === 'symbol');
   const quantityIdx = colNames.findIndex(h => h.toLowerCase() === 'quantity');
-  const costPriceIdx = colNames.findIndex(h => h.toLowerCase() === 'cost price');
   const costBasisIdx = colNames.findIndex(h => h.toLowerCase() === 'cost basis');
   const closePriceIdx = colNames.findIndex(h => h.toLowerCase() === 'close price');
   const valueIdx = colNames.findIndex(h => h.toLowerCase() === 'value');
 
-  if (currencyIdx === -1 || symbolIdx === -1 || quantityIdx === -1 || costPriceIdx === -1 || 
+  if (currencyIdx === -1 || symbolIdx === -1 || quantityIdx === -1 ||
      costBasisIdx === -1 || closePriceIdx === -1 || valueIdx === -1) {
     throw new Error('Required columns not found in Open Positions section.');
   }
@@ -54,7 +53,6 @@ export function parseIBStatement(csvText: string): Stock[] {
     const position = parseFloat(fields[quantityIdx]);
     const rawCostBasis = parseFloat(fields[costBasisIdx]);
     const rawMarketValue = parseFloat(fields[valueIdx]);
-    const rawAvgPrice = parseFloat(fields[costPriceIdx]);
     const rawCurrentPrice = parseFloat(fields[closePriceIdx]);
 
     if (!ticker || isNaN(position) || position <= 0 || isNaN(rawCostBasis) || isNaN(rawMarketValue)) {
@@ -75,7 +73,6 @@ export function parseIBStatement(csvText: string): Stock[] {
       // Monetary values always stored in USD
       costBasis: isJpy ? rawCostBasis / usdJpyRate! : rawCostBasis,
       marketValue: isJpy ? rawMarketValue / usdJpyRate! : rawMarketValue,
-      avgPrice: isJpy ? rawAvgPrice / usdJpyRate! : rawAvgPrice,
       // Current price kept in the original currency for display;
       // rawMarketValue / position gives price per share in the native currency for both cases
       currentPrice: isNaN(rawCurrentPrice) ? rawMarketValue / position : rawCurrentPrice,

@@ -11,7 +11,6 @@
   background-color: rgba(0, 123, 255, 0.1);
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -29,41 +28,6 @@
   background: #a8a8a8;
 }
 
-/* Chart container styles */
-.chart-container {
-  position: relative;
-  height: 500px;
-  width: 100%;
-}
-
-/* Right panel styles */
-.sticky-top {
-  transition: all 0.3s ease-in-out;
-}
-
-/* Smooth transitions for panel appearance */
-.col-lg-4 {
-  transition: all 0.3s ease-in-out;
-}
-
-/* Chart panel animations */
-.card.h-100 {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease-in-out;
-}
-
-.card.h-100:hover {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-}
-
-/* Loading states */
-.spinner-border-sm {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* Table improvements */
 .table th {
   white-space: nowrap;
   position: sticky;
@@ -76,46 +40,17 @@
   vertical-align: middle;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .container-fluid {
     padding-left: 10px;
     padding-right: 10px;
   }
-  
+
   .card-body {
     padding: 1rem;
   }
-  
+
   .table-responsive {
     font-size: 0.9rem;
   }
-  
-  /* Stack panels on mobile */
-  .col-lg-8, .col-lg-4 {
-    width: 100%;
-  }
-}
-
-/* Chart tooltip improvements */
-.chartjs-tooltip {
-  background: rgba(0, 0, 0, 0.8) !important;
-  color: white !important;
-  border-radius: 4px !important;
-  padding: 8px 12px !important;
-  font-size: 12px !important;
-}
-
-/* Performance indicators */
-.performance-indicator {
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.performance-positive {
-  color: #28a745;
-}
-
-.performance-negative {
-  color: #dc3545;
 }

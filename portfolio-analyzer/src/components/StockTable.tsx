@@ -1,35 +1,28 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useEffect, useState } from 'react';
+import { TAG_COLORS } from '../data/stockTags';
 import { useStockTags } from '../hooks/useStockTags';
 import { Stock } from '../types';
 
 interface StockTableProps {
   stocks: Stock[];
-  onStockSelect: (stock: Stock) => void;
+  selectedTicker?: string;
+  onStockSelect?: (ticker: string | null) => void;
 }
 
-type SortField = 'ticker' | 'position' | 'marketValue' | 'costBasis' | 'unrealizedPL' | 'percentOfPortfolio' | 'currentPrice' | 'peRatio' | 'dividendYield';
+type SortField = 'ticker' | 'position' | 'marketValue' | 'costBasis' | 'unrealizedPL' | 'percentOfPortfolio' | 'currentPrice';
 type SortDirection = 'asc' | 'desc';
 
-export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect }) => {
+export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, onStockSelect }) => {
   const [sortField, setSortField] = useState<SortField>('ticker');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [enrichedStocks, setEnrichedStocks] = useState<Stock[]>(stocks);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
-  const { stockTags, getTagsForTicker, getAllTags } = useStockTags();
-
-  // Predefined colors for specific tags
-  const tagColorMap: Record<string, { bg: string; color: string; border?: string }> = {
-    Growth: { bg: '#FFD54F', color: '#3C2F00' },       // yellow
-    ETF: { bg: '#A5D6A7', color: '#0F3D18' },          // green
-    Value: { bg: '#64B5F6', color: '#0D2A40' },        // blue
-    Income: { bg: '#FFB74D', color: '#3C2200' },       // orange
-    Stock: { bg: '#B39DDB', color: '#2A1B47' }         // purple
-  };
+  const { getTagsForTicker, getAllTags } = useStockTags();
 
   const renderTagBadge = (tag: string) => {
-    const style = tagColorMap[tag] || { bg: '#e9ecef', color: '#212529', border: '1px solid #dee2e6' };
+    const style = TAG_COLORS[tag] || { bg: '#e9ecef', color: '#212529', border: '1px solid #dee2e6' };
     return (
       <span
         key={tag}
@@ -136,14 +129,6 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
         aValue = a.currentPrice || 0;
         bValue = b.currentPrice || 0;
         break;
-      case 'peRatio':
-        aValue = a.peRatio || 0;
-        bValue = b.peRatio || 0;
-        break;
-      case 'dividendYield':
-        aValue = a.dividendYield || 0;
-        bValue = b.dividendYield || 0;
-        break;
       default:
         return 0;
     }
@@ -184,8 +169,8 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                   onClick={() => toggleTag(tag)}
                   style={{
                     border: isTagSelected(tag) ? '2px solid #212529' : '1px solid #dee2e6',
-                    backgroundColor: (tagColorMap[tag]?.bg) || '#f8f9fa',
-                    color: (tagColorMap[tag]?.color) || '#212529',
+                    backgroundColor: (TAG_COLORS[tag]?.bg) || '#f8f9fa',
+                    color: (TAG_COLORS[tag]?.color) || '#212529',
                     fontWeight: 500
                   }}
                   aria-pressed={isTagSelected(tag)}
@@ -244,19 +229,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                 >
                   Unrealized P&L {getSortIcon('unrealizedPL')}
                 </th>
-                <th 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('peRatio')}
-                >
-                  P/E Ratio {getSortIcon('peRatio')}
-                </th>
-                <th 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('dividendYield')}
-                >
-                  Dividend Yield {getSortIcon('dividendYield')}
-                </th>
-                <th 
+                <th
                     className="cursor-pointer"
                     onClick={() => handleSort('percentOfPortfolio')}
                 >
@@ -271,8 +244,14 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                 const percentOfPortfolio = (stock.marketValue / totalValue) * 100;
                 const currentPrice = stock.currentPrice;
                 
+                const isSelected = stock.ticker === selectedTicker;
                 return (
-                  <tr key={stock.ticker} className="cursor-pointer">
+                  <tr
+                    key={stock.ticker}
+                    className="cursor-pointer"
+                    style={isSelected ? { backgroundColor: 'rgba(13, 110, 253, 0.1)' } : undefined}
+                    onClick={() => onStockSelect?.(isSelected ? null : stock.ticker)}
+                  >
                     <td className="fw-bold">{stock.ticker}</td>
                     <td>
                         {stock.tags && stock.tags.length > 0 ? (
@@ -290,13 +269,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                     <td>{formatCurrency(stock.marketValue, 'USD')}</td>
                     <td>{formatCurrency(stock.costBasis, 'USD')}</td>
                     <td className={unrealizedPL >= 0 ? 'text-success' : 'text-danger'}>
-                      {formatCurrency(unrealizedPL)}
-                    </td>
-                    <td>
-                      {stock.peRatio && stock.peRatio > 0 ? stock.peRatio.toFixed(2) : 'N/A'}
-                    </td>
-                    <td>
-                      {stock.dividendYield && stock.dividendYield > 0 ? formatPercentage(stock.dividendYield) : 'N/A'}
+                      {formatCurrency(unrealizedPL, 'USD')}
                     </td>
                     <td>{formatPercentage(percentOfPortfolio)}</td>
                   </tr>

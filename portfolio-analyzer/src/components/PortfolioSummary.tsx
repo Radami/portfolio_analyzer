@@ -1,12 +1,19 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { ArcElement, Chart as ChartJS, Legend } from 'chart.js';
 import React from 'react';
+import { Doughnut } from 'react-chartjs-2';
+import { TAG_COLORS } from '../data/stockTags';
+import { useStockTags } from '../hooks/useStockTags';
 import { Portfolio } from '../types';
+
+ChartJS.register(ArcElement, Legend);
 
 interface PortfolioSummaryProps {
   portfolio: Portfolio;
 }
 
 export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio }) => {
+  const { getTagsForTicker } = useStockTags();
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -35,6 +42,58 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio })
   const getUnrealizedPLColor = (value: number) => {
     return value >= 0 ? 'text-success' : 'text-danger';
   };
+
+  const buildDoughnutData = (tagIndex: number) => {
+    const totals: Record<string, number> = {};
+    for (const stock of portfolio.stocks) {
+      const tag = getTagsForTicker(stock.ticker)[tagIndex];
+      if (!tag) continue;
+      totals[tag] = (totals[tag] ?? 0) + stock.marketValue;
+    }
+    const labels = Object.keys(totals);
+    const total = labels.reduce((s, l) => s + totals[l], 0);
+    const chartData = {
+      labels,
+      datasets: [{
+        data: labels.map(l => totals[l]),
+        backgroundColor: labels.map(l => TAG_COLORS[l]?.bg ?? '#e9ecef'),
+        borderWidth: 1,
+      }],
+    };
+    const legendItems = labels.map(l => ({
+      label: l,
+      value: totals[l],
+      pct: (totals[l] / total) * 100,
+      color: TAG_COLORS[l]?.bg ?? '#e9ecef',
+    }));
+    return { chartData, legendItems };
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    hover: { mode: null as any },
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: false },
+    },
+  };
+
+  const renderLegend = (items: { label: string; value: number; pct: number; color: string }[]) => (
+    <table className="w-100 mt-3" style={{ fontSize: '0.85rem' }}>
+      <tbody>
+        {items.map(item => (
+          <tr key={item.label}>
+            <td style={{ width: '12px', paddingRight: '8px' }}>
+              <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px', backgroundColor: item.color }} />
+            </td>
+            <td className="fw-medium">{item.label}</td>
+            <td className="text-end text-muted">{item.pct.toFixed(1)}%</td>
+            <td className="text-end ps-3">{formatCurrency(item.value)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 
   return (
     <div className="row">
@@ -81,50 +140,38 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio })
         </div>
       </div>
       
-      <div className="col-12 mt-3">
-        <div className="card">
+      <div className="col-md-6 mt-3">
+        <div className="card h-100">
           <div className="card-header">
-            <h6 className="mb-0">Portfolio Allocation</h6>
+            <h6 className="mb-0">Strategy</h6>
           </div>
-          <div className="card-body">
-            <div className="row">
-              {portfolio.stocks.slice(0, 5).map((stock) => (
-                <div key={stock.ticker} className="col-md-2 col-sm-4 col-6 mb-2">
-                  <div className="d-flex justify-content-between">
-                    <span className="fw-bold">{stock.ticker}</span>
-                    <span className="text-muted">
-                      {((stock.marketValue / portfolio.totalValue) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="progress" style={{ height: '4px' }}>
-                    <div 
-                      className="progress-bar" 
-                      style={{ 
-                        width: `${(stock.marketValue / portfolio.totalValue) * 100}%` 
-                      }}
-                    ></div>
-                  </div>
+          <div className="card-body d-flex justify-content-center">
+            {(() => { const { chartData, legendItems } = buildDoughnutData(0); return (
+              <div className="d-flex gap-4 align-items-center">
+                <div style={{ width: '160px', flexShrink: 0 }}>
+                  <Doughnut data={chartData} options={doughnutOptions} />
                 </div>
-              ))}
-              {portfolio.stocks.length > 5 && (
-                <div className="col-md-2 col-sm-4 col-6 mb-2">
-                  <div className="d-flex justify-content-between">
-                    <span className="fw-bold">Others</span>
-                    <span className="text-muted">
-                      {((portfolio.stocks.slice(5).reduce((sum, stock) => sum + stock.marketValue, 0) / portfolio.totalValue) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="progress" style={{ height: '4px' }}>
-                    <div 
-                      className="progress-bar" 
-                      style={{ 
-                        width: `${(portfolio.stocks.slice(5).reduce((sum, stock) => sum + stock.marketValue, 0) / portfolio.totalValue) * 100}%` 
-                      }}
-                    ></div>
-                  </div>
+                <div className="flex-grow-1">{renderLegend(legendItems)}</div>
+              </div>
+            ); })()}
+          </div>
+        </div>
+      </div>
+
+      <div className="col-md-6 mt-3">
+        <div className="card h-100">
+          <div className="card-header">
+            <h6 className="mb-0">Instrument Type</h6>
+          </div>
+          <div className="card-body d-flex justify-content-center">
+            {(() => { const { chartData, legendItems } = buildDoughnutData(1); return (
+              <div className="d-flex gap-4 align-items-center">
+                <div >
+                  <Doughnut data={chartData} options={doughnutOptions} />
                 </div>
-              )}
-            </div>
+                <div style={{ width: '160px', flexShrink: 0 }}>{renderLegend(legendItems)}</div>
+              </div>
+            ); })()}
           </div>
         </div>
       </div>

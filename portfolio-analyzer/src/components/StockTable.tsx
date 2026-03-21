@@ -6,27 +6,20 @@ import { Stock } from '../types';
 
 interface StockTableProps {
   stocks: Stock[];
+  selectedTicker?: string;
+  onStockSelect?: (ticker: string | null) => void;
 }
 
 type SortField = 'ticker' | 'position' | 'marketValue' | 'costBasis' | 'unrealizedPL' | 'percentOfPortfolio' | 'currentPrice';
 type SortDirection = 'asc' | 'desc';
 
-export const StockTable: React.FC<StockTableProps> = ({ stocks }) => {
+export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, onStockSelect }) => {
   const [sortField, setSortField] = useState<SortField>('ticker');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [enrichedStocks, setEnrichedStocks] = useState<Stock[]>(stocks);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
   const { getTagsForTicker, getAllTags } = useStockTags();
-
-  // Predefined colors for specific tags
-  const tagColorMap: Record<string, { bg: string; color: string; border?: string }> = {
-    Growth: { bg: '#FFD54F', color: '#3C2F00' },       // yellow
-    ETF: { bg: '#A5D6A7', color: '#0F3D18' },          // green
-    Value: { bg: '#64B5F6', color: '#0D2A40' },        // blue
-    Income: { bg: '#FFB74D', color: '#3C2200' },       // orange
-    Stock: { bg: '#B39DDB', color: '#2A1B47' }         // purple
-  };
 
   const renderTagBadge = (tag: string) => {
     const style = TAG_COLORS[tag] || { bg: '#e9ecef', color: '#212529', border: '1px solid #dee2e6' };
@@ -251,11 +244,11 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks }) => {
                 const percentOfPortfolio = (stock.marketValue / totalValue) * 100;
                 const currentPrice = stock.currentPrice;
                 
+                const isSelected = stock.ticker === selectedTicker;
                 return (
                   <tr
                     key={stock.ticker}
                     className="cursor-pointer"
-
                   >
                     <td className="fw-bold">{stock.ticker}</td>
                     <td>

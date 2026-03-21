@@ -71,7 +71,6 @@ export const PortfolioDashboard: React.FC = () => {
                 <div>
                   <StockTable
                     stocks={snapshot.portfolio.stocks}
-                    onStockSelect={() => {}}
                   />
                 </div>
               </div>

@@ -5,19 +5,18 @@ import { Stock } from '../types';
 
 interface StockTableProps {
   stocks: Stock[];
-  onStockSelect: (stock: Stock) => void;
 }
 
 type SortField = 'ticker' | 'position' | 'marketValue' | 'costBasis' | 'unrealizedPL' | 'percentOfPortfolio' | 'currentPrice' | 'peRatio' | 'dividendYield';
 type SortDirection = 'asc' | 'desc';
 
-export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect }) => {
+export const StockTable: React.FC<StockTableProps> = ({ stocks }) => {
   const [sortField, setSortField] = useState<SortField>('ticker');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [enrichedStocks, setEnrichedStocks] = useState<Stock[]>(stocks);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
-  const { stockTags, getTagsForTicker, getAllTags } = useStockTags();
+  const { getTagsForTicker, getAllTags } = useStockTags();
 
   // Predefined colors for specific tags
   const tagColorMap: Record<string, { bg: string; color: string; border?: string }> = {
@@ -290,7 +289,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, onStockSelect })
                     <td>{formatCurrency(stock.marketValue, 'USD')}</td>
                     <td>{formatCurrency(stock.costBasis, 'USD')}</td>
                     <td className={unrealizedPL >= 0 ? 'text-success' : 'text-danger'}>
-                      {formatCurrency(unrealizedPL)}
+                      {formatCurrency(unrealizedPL, 'USD')}
                     </td>
                     <td>
                       {stock.peRatio && stock.peRatio > 0 ? stock.peRatio.toFixed(2) : 'N/A'}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Portfolio } from '../types';
-import { parseIBStatement, extractSnapshotDate } from '../utils/csvParser';
+import { parseIBStatement, extractSnapshotDate, parseDividends } from '../utils/csvParser';
 
 export interface Snapshot {
   filename: string;
@@ -32,6 +32,7 @@ export const useSnapshots = () => {
               const csvText = await csvRes.text();
               const stocks = parseIBStatement(csvText);
               if (stocks.length === 0) return null;
+              const dividends = parseDividends(csvText);
               const { date, label } = extractSnapshotDate(csvText, filename);
               return {
                 filename,
@@ -39,6 +40,7 @@ export const useSnapshots = () => {
                 label,
                 portfolio: {
                   stocks,
+                  dividends,
                   totalValue: stocks.reduce((sum, s) => sum + s.marketValue, 0),
                   lastUpdated: date,
                 },

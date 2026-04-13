@@ -1,24 +1,38 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useState } from 'react';
 import { useSnapshots } from '../hooks/useSnapshots';
-import { PortfolioSummary } from './PortfolioSummary';
-import { StockTable } from './StockTable';
-import { TickerPerformancePanel } from './TickerPerformancePanel';
+import { DividendsDashboard } from './DividendsDashboard';
+import { PositionsDashboard } from './PositionsDashboard';
+
+type Page = 'positions' | 'dividends';
 
 export const PortfolioDashboard: React.FC = () => {
   const { snapshots, loading, error } = useSnapshots();
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
-
-  // Default to the latest snapshot; respect manual selection after that
-  const effectiveIndex = selectedIndex ?? snapshots.length - 1;
-  const snapshot = snapshots[effectiveIndex] ?? null;
+  const [activePage, setActivePage] = useState<Page>('positions');
 
   return (
     <div className="container-fluid">
-      <div className="row mb-4">
-        <div className="col-12">
-          <h1 className="h2 mb-0">Portfolio Analyzer</h1>
+      <div className="row mb-3">
+        <div className="col-12 d-flex align-items-center gap-3">
+          <h1 className="h2 mb-0 me-2">Portfolio Analyzer</h1>
+          <ul className="nav nav-tabs border-0">
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activePage === 'positions' ? 'active' : ''}`}
+                onClick={() => setActivePage('positions')}
+              >
+                Positions
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activePage === 'dividends' ? 'active' : ''}`}
+                onClick={() => setActivePage('dividends')}
+              >
+                Dividends
+              </button>
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -44,50 +58,8 @@ export const PortfolioDashboard: React.FC = () => {
 
       {!loading && snapshots.length > 0 && (
         <>
-          <div className="row mb-4">
-            <div className="col-12">
-              <div className="d-flex align-items-center gap-2 flex-wrap">
-                <span className="text-muted me-1">Snapshot:</span>
-                <div className="btn-group flex-wrap" role="group" aria-label="Portfolio snapshots">
-                  {snapshots.map((s, i) => (
-                    <button
-                      key={s.filename}
-                      type="button"
-                      className={`btn ${i === effectiveIndex ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => setSelectedIndex(i)}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {snapshot && (
-            <div className="row">
-              <div className="col-12 mb-4">
-                <PortfolioSummary portfolio={snapshot.portfolio} />
-              </div>
-              <div className={selectedTicker ? 'col-8' : 'col-12'}>
-                <StockTable
-                  stocks={snapshot.portfolio.stocks}
-                  selectedTicker={selectedTicker ?? undefined}
-                  onStockSelect={setSelectedTicker}
-                />
-              </div>
-              {selectedTicker && (
-                <div className="col-4" style={{ position: 'sticky', top: '1rem', alignSelf: 'flex-start' }}>
-                  <TickerPerformancePanel
-                    ticker={selectedTicker}
-                    snapshots={snapshots}
-                    onClose={() => setSelectedTicker(null)}
-                  />
-                </div>
-              )}
-            </div>
-            
-          )}
+          {activePage === 'positions' && <PositionsDashboard snapshots={snapshots} />}
+          {activePage === 'dividends' && <DividendsDashboard snapshots={snapshots} />}
         </>
       )}
     </div>

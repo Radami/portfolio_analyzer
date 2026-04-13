@@ -8,8 +8,17 @@ export interface Stock {
   tags?: string[];
 }
 
+export interface DividendEntry {
+  date: string;
+  ticker: string;
+  amountPerShare: number;
+  totalAmount: number;
+  currency: string;
+}
+
 export interface Portfolio {
   stocks: Stock[];
+  dividends: DividendEntry[];
   totalValue: number;
   lastUpdated: string;
 }

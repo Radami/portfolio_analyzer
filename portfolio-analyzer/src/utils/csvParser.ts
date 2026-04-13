@@ -1,4 +1,4 @@
-import { Stock } from '../types';
+import { DividendEntry, Stock } from '../types';
 
 // Returns the USD/JPY rate (how many JPY per 1 USD) from the statement,
 // using the Mark-to-Market Performance Summary end-of-period current price.
@@ -80,6 +80,52 @@ export function parseIBStatement(csvText: string): Stock[] {
   }
 
   return stocks;
+}
+
+export function parseDividends(csvText: string): DividendEntry[] {
+  const lines = csvText.split('\n');
+
+  const headerLineIndex = lines.findIndex(l => l.startsWith('Dividends,Header,'));
+  if (headerLineIndex === -1) return [];
+
+  const headerFields = lines[headerLineIndex].split(',').map(h => h.trim());
+  const colNames = headerFields.slice(2);
+
+  const currencyIdx = colNames.findIndex(h => h.toLowerCase() === 'currency');
+  const dateIdx = colNames.findIndex(h => h.toLowerCase() === 'date');
+  const descriptionIdx = colNames.findIndex(h => h.toLowerCase() === 'description');
+  const amountIdx = colNames.findIndex(h => h.toLowerCase() === 'amount');
+
+  if (currencyIdx === -1 || dateIdx === -1 || descriptionIdx === -1 || amountIdx === -1) return [];
+
+  const dividends: DividendEntry[] = [];
+
+  for (const line of lines) {
+    if (!line.startsWith('Dividends,Data,')) continue;
+
+    const values = line.split(',').map(v => v.trim());
+    const fields = values.slice(2);
+
+    const currency = fields[currencyIdx];
+    const date = fields[dateIdx];
+    const description = fields[descriptionIdx];
+    const totalAmount = parseFloat(fields[amountIdx]);
+
+    if (!description || isNaN(totalAmount) || totalAmount <= 0) continue;
+
+    // Extract ticker: e.g. "AFL(US001055…)" or "ENB (CA292…)"
+    const tickerMatch = description.match(/^([A-Z.]+)\s*\(/);
+    if (!tickerMatch) continue;
+    const ticker = tickerMatch[1];
+
+    // Extract per-share amount: "Cash Dividend USD 0.61 per Share" or "Cash Dividend USD 4.74 (Ordinary…)"
+    const perShareMatch = description.match(/Cash Dividend [A-Z]+ ([\d.]+)/);
+    const amountPerShare = perShareMatch ? parseFloat(perShareMatch[1]) : 0;
+
+    dividends.push({ date, ticker, amountPerShare, totalAmount, currency });
+  }
+
+  return dividends;
 }
 
 export function extractSnapshotDate(csvText: string, filename: string): { date: string; label: string } {

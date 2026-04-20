@@ -113,8 +113,6 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
     })),
   };
 
-  const metricByKey = Object.fromEntries(METRICS.map(m => [m.key, m]));
-
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -124,8 +122,7 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
       tooltip: {
         callbacks: {
           label: (ctx: any) => {
-            const metric = metricByKey[ctx.dataset.label.replace(/ /g, '') as MetricKey]
-              ?? METRICS.find(m => m.label === ctx.dataset.label);
+            const metric = METRICS.find(m => m.label === ctx.dataset.label);
             const fmt = metric?.format ?? 'number';
             return ` ${ctx.dataset.label}: ${formatValue(ctx.parsed.y, fmt)}`;
           },

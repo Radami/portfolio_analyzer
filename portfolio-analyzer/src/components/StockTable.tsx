@@ -27,7 +27,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, get
   };
 
   const formatCurrency = (price: number, currency?: string) => {
-    if (!price) return 'N/A';
+    if (price == null) return 'N/A';
     if (currency === 'JPY') {
       return new Intl.NumberFormat('ja-JP', {
         style: 'currency', currency: 'JPY',

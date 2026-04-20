@@ -63,7 +63,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, get
     ? stocks
     : stocks.filter(stock => {
         const m = getMetadata(stock.ticker);
-        const allTags = new Set([...m.industryTags, ...m.typeTags, ]);
+        const allTags = new Set([...m.industryTags, ...m.typeTags]);
         return selectedTags.every(tag => allTags.has(tag));
       });
 

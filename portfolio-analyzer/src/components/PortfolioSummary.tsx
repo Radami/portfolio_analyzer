@@ -22,6 +22,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, g
 
   const formatPercentage = (value: number) => `${value.toFixed(2)}%`;
 
+  const totalCostBasis = portfolio.stocks.reduce((sum, s) => sum + s.costBasis, 0);
   const totalUnrealizedPL = portfolio.stocks.reduce(
     (sum, s) => sum + (s.marketValue - s.costBasis), 0
   );
@@ -101,9 +102,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, g
         <div className="card text-center">
           <div className="card-body">
             <h6 className="card-title text-muted">Total Cost Basis</h6>
-            <h4 className="card-text fw-bold">
-              {formatCurrency(portfolio.stocks.reduce((sum, s) => sum + s.costBasis, 0))}
-            </h4>
+            <h4 className="card-text fw-bold">{formatCurrency(totalCostBasis)}</h4>
           </div>
         </div>
       </div>

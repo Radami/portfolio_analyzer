@@ -28,33 +28,6 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, g
   const totalUnrealizedPLPct = (totalUnrealizedPL / portfolio.totalValue) * 100;
   const plColor = (v: number) => (v >= 0 ? 'text-success' : 'text-danger');
 
-  const buildDoughnutData = (tagExtractor: (m: StockMetadata) => string | undefined) => {
-    const totals: Record<string, number> = {};
-    for (const stock of portfolio.stocks) {
-      const tag = tagExtractor(getMetadata(stock.ticker));
-      if (!tag) continue;
-      totals[tag] = (totals[tag] ?? 0) + stock.marketValue;
-    }
-    const labels = Object.keys(totals);
-    const total = labels.reduce((s, l) => s + totals[l], 0);
-    return {
-      chartData: {
-        labels,
-        datasets: [{
-          data: labels.map(l => totals[l]),
-          backgroundColor: labels.map(l => TAG_COLORS[l]?.bg ?? '#e9ecef'),
-          borderWidth: 1,
-        }],
-      },
-      legendItems: labels.map(l => ({
-        label: l,
-        value: totals[l],
-        pct: (totals[l] / total) * 100,
-        color: TAG_COLORS[l]?.bg ?? '#e9ecef',
-      })),
-    };
-  };
-
   const doughnutOptions = {
     responsive: true,
     plugins: { legend: { display: false }, tooltip: { enabled: false } },
@@ -77,14 +50,41 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, g
     </table>
   );
 
-  const strategyData = useMemo(
-    () => buildDoughnutData(m => m.typeTags.find(t => (STRATEGY_TAGS as readonly string[]).includes(t))),
-    [portfolio.stocks, getMetadata]
-  );
-  const instrumentData = useMemo(
-    () => buildDoughnutData(m => m.typeTags.find(t => (INSTRUMENT_TAGS as readonly string[]).includes(t))),
-    [portfolio.stocks, getMetadata]
-  );
+  const strategyData = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const stock of portfolio.stocks) {
+      const tag = getMetadata(stock.ticker).typeTags.find(t => (STRATEGY_TAGS as readonly string[]).includes(t as string));
+      if (!tag) continue;
+      totals[tag] = (totals[tag] ?? 0) + stock.marketValue;
+    }
+    const labels = Object.keys(totals);
+    const total = labels.reduce((s, l) => s + totals[l], 0);
+    return {
+      chartData: {
+        labels,
+        datasets: [{ data: labels.map(l => totals[l]), backgroundColor: labels.map(l => TAG_COLORS[l]?.bg ?? '#e9ecef'), borderWidth: 1 }],
+      },
+      legendItems: labels.map(l => ({ label: l, value: totals[l], pct: (totals[l] / total) * 100, color: TAG_COLORS[l]?.bg ?? '#e9ecef' })),
+    };
+  }, [portfolio.stocks, getMetadata]);
+
+  const instrumentData = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const stock of portfolio.stocks) {
+      const tag = getMetadata(stock.ticker).typeTags.find(t => (INSTRUMENT_TAGS as readonly string[]).includes(t));
+      if (!tag) continue;
+      totals[tag] = (totals[tag] ?? 0) + stock.marketValue;
+    }
+    const labels = Object.keys(totals);
+    const total = labels.reduce((s, l) => s + totals[l], 0);
+    return {
+      chartData: {
+        labels,
+        datasets: [{ data: labels.map(l => totals[l]), backgroundColor: labels.map(l => TAG_COLORS[l]?.bg ?? '#e9ecef'), borderWidth: 1 }],
+      },
+      legendItems: labels.map(l => ({ label: l, value: totals[l], pct: (totals[l] / total) * 100, color: TAG_COLORS[l]?.bg ?? '#e9ecef' })),
+    };
+  }, [portfolio.stocks, getMetadata]);
 
   return (
     <div className="row">

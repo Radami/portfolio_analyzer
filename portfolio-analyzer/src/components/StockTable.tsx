@@ -1,22 +1,21 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useState } from 'react';
 import { getTagColor } from '../data/tagDefinitions';
-import { useStockMetadata } from '../hooks/useStockMetadata';
-import { Stock } from '../types';
+import { Stock, StockMetadata } from '../types';
 
 interface StockTableProps {
   stocks: Stock[];
+  getMetadata: (ticker: string) => StockMetadata;
+  getAllTags: () => string[];
 }
 
 type SortField = 'ticker' | 'position' | 'marketValue' | 'costBasis' | 'unrealizedPL' | 'percentOfPortfolio' | 'currentPrice';
 type SortDirection = 'asc' | 'desc';
 
-export const StockTable: React.FC<StockTableProps> = ({ stocks }) => {
+export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, getAllTags }) => {
   const [sortField, setSortField] = useState<SortField>('ticker');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
-  const { getMetadata, getAllTags } = useStockMetadata();
 
   const renderTagBadge = (tag: string) => {
     const { bg, color } = getTagColor(tag);

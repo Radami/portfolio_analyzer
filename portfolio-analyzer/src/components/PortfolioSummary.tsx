@@ -3,17 +3,16 @@ import { ArcElement, Chart as ChartJS, Legend } from 'chart.js';
 import React from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { TAG_COLORS } from '../data/tagDefinitions';
-import { useStockMetadata } from '../hooks/useStockMetadata';
 import { Portfolio, StockMetadata } from '../types';
 
 ChartJS.register(ArcElement, Legend);
 
 interface PortfolioSummaryProps {
   portfolio: Portfolio;
+  getMetadata: (ticker: string) => StockMetadata;
 }
 
-export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio }) => {
-  const { getMetadata } = useStockMetadata();
+export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, getMetadata }) => {
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', {

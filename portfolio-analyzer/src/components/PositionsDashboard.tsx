@@ -1,5 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useMemo, useState } from 'react';
+import { useStockMetadata } from '../hooks/useStockMetadata';
 import { Snapshot } from '../hooks/useSnapshots';
 import { PortfolioSummary } from './PortfolioSummary';
 import { StockTable } from './StockTable';
@@ -10,6 +11,7 @@ interface PositionsDashboardProps {
 
 export const PositionsDashboard: React.FC<PositionsDashboardProps> = ({ snapshots }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const { getMetadata, getAllTags } = useStockMetadata();
 
   const effectiveIndex = selectedIndex ?? snapshots.length - 1;
   const snapshot = snapshots[effectiveIndex] ?? null;
@@ -81,10 +83,10 @@ export const PositionsDashboard: React.FC<PositionsDashboardProps> = ({ snapshot
       {snapshot && (
         <div className="row">
           <div className="col-12 mb-4">
-            <PortfolioSummary portfolio={snapshot.portfolio} />
+            <PortfolioSummary portfolio={snapshot.portfolio} getMetadata={getMetadata} />
           </div>
           <div className="col-12">
-            <StockTable stocks={snapshot.portfolio.stocks} />
+            <StockTable stocks={snapshot.portfolio.stocks} getMetadata={getMetadata} getAllTags={getAllTags} />
           </div>
         </div>
       )}

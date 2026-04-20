@@ -7,6 +7,7 @@ import {
   PointElement,
   Title,
   Tooltip,
+  TooltipItem,
 } from 'chart.js';
 import React, { useMemo, useState, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
@@ -119,18 +120,18 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
     })),
   }), [dataPoints, selectedMetrics]);
 
-  const tooltipLabel = useCallback((ctx: any) => {
+  const tooltipLabel = useCallback((ctx: TooltipItem<'line'>) => {
     const metric = METRICS.find(m => m.label === ctx.dataset.label);
     const fmt = metric?.format ?? 'number';
     return ` ${ctx.dataset.label}: ${formatValue(ctx.parsed.y, fmt)}`;
   }, []);
 
-  const rightAxisTick = useCallback((v: any) => {
+  const rightAxisTick = useCallback((v: number | string) => {
     const rightMetrics = METRICS.filter(m => m.axis === 'y1' && selectedMetrics.has(m.key));
     if (rightMetrics.length === 1 && rightMetrics[0].format === 'percent') {
-      return `${(v as number).toFixed(1)}%`;
+      return `${Number(v).toFixed(1)}%`;
     }
-    return (v as number).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    return Number(v).toLocaleString('en-US', { maximumFractionDigits: 2 });
   }, [selectedMetrics]);
 
   const chartOptions = useMemo(() => ({
@@ -148,7 +149,7 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
       y: {
         display: hasLeftAxis,
         position: 'left' as const,
-        ticks: { callback: (v: any) => formatCurrency(v) },
+        ticks: { callback: (v: number | string) => formatCurrency(Number(v)) },
         title: { display: true, text: 'USD Value' },
       },
       y1: {

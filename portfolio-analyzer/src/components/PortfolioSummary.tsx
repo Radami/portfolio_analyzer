@@ -2,7 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { ArcElement, Chart as ChartJS, Legend } from 'chart.js';
 import React, { useMemo } from 'react';
 import { Doughnut } from 'react-chartjs-2';
-import { TAG_COLORS } from '../data/tagDefinitions';
+import { INSTRUMENT_TAGS, STRATEGY_TAGS, TAG_COLORS } from '../data/tagDefinitions';
 import { Portfolio, StockMetadata } from '../types';
 
 ChartJS.register(ArcElement, Legend);
@@ -79,11 +79,11 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, g
   );
 
   const strategyData = useMemo(
-    () => buildDoughnutData(m => m.typeTags.find(t => ['Growth', 'Value', 'Income'].includes(t))),
+    () => buildDoughnutData(m => m.typeTags.find(t => (STRATEGY_TAGS as readonly string[]).includes(t))),
     [portfolio.stocks, getMetadata]
   );
   const instrumentData = useMemo(
-    () => buildDoughnutData(m => m.typeTags.find(t => ['Stock', 'ETF', 'REIT', 'Bond'].includes(t))),
+    () => buildDoughnutData(m => m.typeTags.find(t => (INSTRUMENT_TAGS as readonly string[]).includes(t))),
     [portfolio.stocks, getMetadata]
   );
 

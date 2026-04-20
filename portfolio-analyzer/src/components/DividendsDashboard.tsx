@@ -9,7 +9,7 @@ interface DividendsDashboardProps {
 }
 
 type ViewMode = 'monthly' | 'yearly';
-type SortKey = 'ticker' | 'totalAmount' | 'payments' | 'latestPerShare' | 'pct';
+type SortKey = 'ticker' | 'totalAmount' | 'payments' | 'latestPerShare';
 type SortDir = 'asc' | 'desc';
 
 interface TickerSummary {
@@ -113,7 +113,7 @@ export const DividendsDashboard: React.FC<DividendsDashboardProps> = ({ snapshot
     return [...perTicker].sort((a, b) => {
       let cmp = 0;
       if (sortKey === 'ticker') cmp = a.ticker.localeCompare(b.ticker);
-      else if (sortKey === 'totalAmount' || sortKey === 'pct') cmp = a.totalAmount - b.totalAmount;
+      else if (sortKey === 'totalAmount') cmp = a.totalAmount - b.totalAmount;
       else if (sortKey === 'payments') cmp = a.payments - b.payments;
       else if (sortKey === 'latestPerShare') cmp = a.latestPerShare - b.latestPerShare;
       return sortDir === 'asc' ? cmp : -cmp;
@@ -279,8 +279,8 @@ export const DividendsDashboard: React.FC<DividendsDashboardProps> = ({ snapshot
                         <th style={{ cursor: 'pointer' }} className="text-end" onClick={() => handleSort('totalAmount')}>
                           Total Received {sortIcon('totalAmount')}
                         </th>
-                        <th style={{ cursor: 'pointer' }} className="text-end" onClick={() => handleSort('pct')}>
-                          % of Total {sortIcon('pct')}
+                        <th style={{ cursor: 'pointer' }} className="text-end" onClick={() => handleSort('totalAmount')}>
+                          % of Total {sortIcon('totalAmount')}
                         </th>
                         <th style={{ cursor: 'pointer' }} className="text-end" onClick={() => handleSort('payments')}>
                           Payments {sortIcon('payments')}

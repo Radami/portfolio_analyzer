@@ -67,7 +67,8 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, get
         return selectedTags.every(tag => allTags.has(tag));
       });
 
-  const totalValue = filteredStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
+  const totalValue = stocks.reduce((sum, stock) => sum + stock.marketValue, 0);
+  const filteredTotalValue = filteredStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
 
   const sortedStocks = [...filteredStocks].sort((a, b) => {
     let aValue: string | number;
@@ -79,8 +80,8 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, get
       case 'costBasis':    aValue = a.costBasis; bValue = b.costBasis; break;
       case 'unrealizedPL': aValue = a.marketValue - a.costBasis; bValue = b.marketValue - b.costBasis; break;
       case 'percentOfPortfolio':
-        aValue = (a.marketValue / totalValue) * 100;
-        bValue = (b.marketValue / totalValue) * 100;
+        aValue = (a.marketValue / filteredTotalValue) * 100;
+        bValue = (b.marketValue / filteredTotalValue) * 100;
         break;
       case 'currentPrice': aValue = a.currentPrice || 0; bValue = b.currentPrice || 0; break;
       default: return 0;
@@ -159,14 +160,14 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, get
                   Unrealized P&L {getSortIcon('unrealizedPL')}
                 </th>
                 <th className="cursor-pointer" onClick={() => handleSort('percentOfPortfolio')}>
-                  % of Portfolio {getSortIcon('percentOfPortfolio')}
+                  % of Selection {getSortIcon('percentOfPortfolio')}
                 </th>
               </tr>
             </thead>
             <tbody>
               {sortedStocks.map(stock => {
                 const unrealizedPL = stock.marketValue - stock.costBasis;
-                const percentOfPortfolio = (stock.marketValue / totalValue) * 100;
+                const percentOfPortfolio = (stock.marketValue / filteredTotalValue) * 100;
                 const meta = getMetadata(stock.ticker);
                 const allStockTags = [...meta.industryTags, ...meta.typeTags];
                 return (

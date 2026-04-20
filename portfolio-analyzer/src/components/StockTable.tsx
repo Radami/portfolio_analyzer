@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import React, { useEffect, useState } from 'react';
-import { TAG_COLORS } from '../data/stockTags';
-import { useStockTags } from '../hooks/useStockTags';
+import React, { useState } from 'react';
+import { getTagColor } from '../data/tagDefinitions';
+import { useStockMetadata } from '../hooks/useStockMetadata';
 import { Stock } from '../types';
 
 interface StockTableProps {
@@ -16,57 +16,31 @@ type SortDirection = 'asc' | 'desc';
 export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, onStockSelect }) => {
   const [sortField, setSortField] = useState<SortField>('ticker');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [enrichedStocks, setEnrichedStocks] = useState<Stock[]>(stocks);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  
-  const { getTagsForTicker, getAllTags } = useStockTags();
+
+  const { getMetadata, getAllTags } = useStockMetadata();
 
   const renderTagBadge = (tag: string) => {
-    const style = TAG_COLORS[tag] || { bg: '#e9ecef', color: '#212529', border: '1px solid #dee2e6' };
+    const { bg, color } = getTagColor(tag);
     return (
-      <span
-        key={tag}
-        className="badge"
-        style={{
-          backgroundColor: style.bg,
-          color: style.color,
-          border: style.border,
-          fontWeight: 500
-        }}
-      >
+      <span key={tag} className="badge" style={{ backgroundColor: bg, color, fontWeight: 500 }}>
         {tag}
       </span>
     );
   };
 
-  // Update stocks when props change and enrich with tags
-  useEffect(() => {
-    const enriched = stocks.map(stock => ({
-      ...stock,
-      tags: getTagsForTicker(stock.ticker)
-    }));
-    setEnrichedStocks(enriched);
-  }, [stocks, getTagsForTicker]);
-
   const formatCurrency = (price: number, currency?: string) => {
     if (!price) return 'N/A';
-    if (currency === 'USD') {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(price);
-    }
     if (currency === 'JPY') {
-      
       return new Intl.NumberFormat('ja-JP', {
-        style: 'currency',
-        currency: 'JPY',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        style: 'currency', currency: 'JPY',
+        minimumFractionDigits: 0, maximumFractionDigits: 0,
       }).format(price);
     }
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: 'USD',
+      minimumFractionDigits: 2, maximumFractionDigits: 2,
+    }).format(price);
   };
 
   const formatPercentage = (value: number) => {
@@ -88,70 +62,41 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, 
     return sortDirection === 'asc' ? '↑' : '↓';
   };
 
-  // Filter stocks by selected tags (AND logic: must include all selected tags)
   const filteredStocks = selectedTags.length === 0
-    ? enrichedStocks
-    : enrichedStocks.filter(stock => {
-        const stockTagsSet = new Set(stock.tags || []);
-        return selectedTags.every(tag => stockTagsSet.has(tag));
+    ? stocks
+    : stocks.filter(stock => {
+        const m = getMetadata(stock.ticker);
+        const allTags = new Set([...m.industryTags, ...m.typeTags, ]);
+        return selectedTags.every(tag => allTags.has(tag));
       });
+
+  const totalValue = filteredStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
 
   const sortedStocks = [...filteredStocks].sort((a, b) => {
     let aValue: any, bValue: any;
-
     switch (sortField) {
-      case 'ticker':
-        aValue = a.ticker;
-        bValue = b.ticker;
-        break;
-      case 'position':
-        aValue = a.position;
-        bValue = b.position;
-        break;
-      case 'marketValue':
-        aValue = a.marketValue;
-        bValue = b.marketValue;
-        break;
-      case 'costBasis':
-        aValue = a.costBasis;
-        bValue = b.costBasis;
-        break;
-      case 'unrealizedPL':
-        aValue = a.marketValue - a.costBasis;
-        bValue = b.marketValue - b.costBasis;
-        break;
+      case 'ticker':       aValue = a.ticker; bValue = b.ticker; break;
+      case 'position':     aValue = a.position; bValue = b.position; break;
+      case 'marketValue':  aValue = a.marketValue; bValue = b.marketValue; break;
+      case 'costBasis':    aValue = a.costBasis; bValue = b.costBasis; break;
+      case 'unrealizedPL': aValue = a.marketValue - a.costBasis; bValue = b.marketValue - b.costBasis; break;
       case 'percentOfPortfolio':
-        const totalValue = filteredStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
         aValue = (a.marketValue / totalValue) * 100;
         bValue = (b.marketValue / totalValue) * 100;
         break;
-      case 'currentPrice':
-        aValue = a.currentPrice || 0;
-        bValue = b.currentPrice || 0;
-        break;
-      default:
-        return 0;
+      case 'currentPrice': aValue = a.currentPrice || 0; bValue = b.currentPrice || 0; break;
+      default: return 0;
     }
-
-    if (typeof aValue === 'string') {
-      aValue = aValue.toLowerCase();
-      bValue = bValue.toLowerCase();
-    }
-
+    if (typeof aValue === 'string') { aValue = aValue.toLowerCase(); bValue = bValue.toLowerCase(); }
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
-  const totalValue = filteredStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
   const allTags = getAllTags();
-
   const isTagSelected = (tag: string) => selectedTags.includes(tag);
-  const toggleTag = (tag: string) => {
-    setSelectedTags(prev => (
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    ));
-  };
+  const toggleTag = (tag: string) =>
+    setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   const clearTags = () => setSelectedTags([]);
 
   return (
@@ -161,23 +106,26 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, 
           <h5 className="mb-0 me-2">Portfolio Holdings</h5>
           {allTags.length > 0 && (
             <div className="d-flex flex-wrap align-items-center gap-2">
-              {allTags.map(tag => (
-                <button
-                  key={tag}
-                  type="button"
-                  className="btn btn-sm"
-                  onClick={() => toggleTag(tag)}
-                  style={{
-                    border: isTagSelected(tag) ? '2px solid #212529' : '1px solid #dee2e6',
-                    backgroundColor: (TAG_COLORS[tag]?.bg) || '#f8f9fa',
-                    color: (TAG_COLORS[tag]?.color) || '#212529',
-                    fontWeight: 500
-                  }}
-                  aria-pressed={isTagSelected(tag)}
-                >
-                  {tag}
-                </button>
-              ))}
+              {allTags.map(tag => {
+                const { bg, color } = getTagColor(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() => toggleTag(tag)}
+                    style={{
+                      border: isTagSelected(tag) ? '2px solid #212529' : '1px solid #dee2e6',
+                      backgroundColor: bg,
+                      color,
+                      fontWeight: 500,
+                    }}
+                    aria-pressed={isTagSelected(tag)}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
               {selectedTags.length > 0 && (
                 <button type="button" className="btn btn-sm btn-outline-secondary" onClick={clearTags}>
                   Clear
@@ -192,78 +140,57 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, 
           <table className="table table-hover">
             <thead>
               <tr>
-                <th 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('ticker')}
-                >
+                <th className="cursor-pointer" style={{ width: '1%' }} onClick={() => handleSort('ticker')}>
                   Ticker {getSortIcon('ticker')}
                 </th>
                 <th>Tags</th>
-                <th 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('position')}
-                >
+                <th className="cursor-pointer" onClick={() => handleSort('position')}>
                   Position {getSortIcon('position')}
                 </th>
-                <th 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('currentPrice')}
-                >
+                <th className="cursor-pointer" onClick={() => handleSort('currentPrice')}>
                   Current Price {getSortIcon('currentPrice')}
                 </th>
-                <th 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('marketValue')}
-                >
+                <th className="cursor-pointer" onClick={() => handleSort('marketValue')}>
                   Market Value {getSortIcon('marketValue')}
                 </th>
-                <th 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('costBasis')}
-                >
+                <th className="cursor-pointer" onClick={() => handleSort('costBasis')}>
                   Cost Basis {getSortIcon('costBasis')}
                 </th>
-                <th 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('unrealizedPL')}
-                >
+                <th className="cursor-pointer" onClick={() => handleSort('unrealizedPL')}>
                   Unrealized P&L {getSortIcon('unrealizedPL')}
                 </th>
-                <th
-                    className="cursor-pointer"
-                    onClick={() => handleSort('percentOfPortfolio')}
-                >
-                    % of Portfolio {getSortIcon('percentOfPortfolio')}
+                <th className="cursor-pointer" onClick={() => handleSort('percentOfPortfolio')}>
+                  % of Portfolio {getSortIcon('percentOfPortfolio')}
                 </th>
-                
               </tr>
             </thead>
             <tbody>
-              {sortedStocks.map((stock) => {
+              {sortedStocks.map(stock => {
                 const unrealizedPL = stock.marketValue - stock.costBasis;
                 const percentOfPortfolio = (stock.marketValue / totalValue) * 100;
-                const currentPrice = stock.currentPrice;
-                
-                const isSelected = stock.ticker === selectedTicker;
+                const meta = getMetadata(stock.ticker);
+                const allStockTags = [...meta.industryTags, ...meta.typeTags];
                 return (
-                  <tr
-                    key={stock.ticker}
-                    className="cursor-pointer"
-                  >
-                    <td className="fw-bold">{stock.ticker}</td>
-                    <td>
-                        {stock.tags && stock.tags.length > 0 ? (
-                        <div className="d-flex flex-wrap gap-1">
-                            {stock.tags.map(tag => renderTagBadge(tag))}
+                  <tr key={stock.ticker} className="cursor-pointer">
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <div className="fw-bold">{stock.ticker}</div>
+                      {meta.companyName && (
+                        <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                          {meta.companyName}
                         </div>
-                        ) : (
-                        <span className="text-muted">No tags</span>
-                        )}
+                      )}
+                    </td>
+                    <td>
+                      {allStockTags.length > 0 ? (
+                        <div className="d-flex flex-wrap gap-1">
+                          {allStockTags.map(tag => renderTagBadge(tag))}
+                        </div>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
                     </td>
                     <td>{stock.position.toLocaleString()}</td>
-                    <td className="fw-bold">
-                      {formatCurrency(currentPrice, stock.currency)}
-                    </td>
+                    <td className="fw-bold">{formatCurrency(stock.currentPrice, stock.currency)}</td>
                     <td>{formatCurrency(stock.marketValue, 'USD')}</td>
                     <td>{formatCurrency(stock.costBasis, 'USD')}</td>
                     <td className={unrealizedPL >= 0 ? 'text-success' : 'text-danger'}>
@@ -276,18 +203,18 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, 
             </tbody>
           </table>
         </div>
-                
-                {filteredStocks.length === 0 && enrichedStocks.length > 0 && (
-                  <div className="text-center py-4">
-                    <p className="text-muted">No stocks match all selected tags.</p>
-                  </div>
-                )}
-                
-                {enrichedStocks.length === 0 && (
-                  <div className="text-center py-4">
-                    <p className="text-muted">No stocks in portfolio. Import a CSV file to get started.</p>
-                  </div>
-                )}
+
+        {filteredStocks.length === 0 && stocks.length > 0 && (
+          <div className="text-center py-4">
+            <p className="text-muted">No stocks match all selected tags.</p>
+          </div>
+        )}
+
+        {stocks.length === 0 && (
+          <div className="text-center py-4">
+            <p className="text-muted">No stocks in portfolio. Import a CSV file to get started.</p>
+          </div>
+        )}
       </div>
     </div>
   );

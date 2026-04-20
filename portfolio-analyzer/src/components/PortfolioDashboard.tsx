@@ -2,9 +2,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useState } from 'react';
 import { useSnapshots } from '../hooks/useSnapshots';
 import { DividendsDashboard } from './DividendsDashboard';
+import { EvolutionDashboard } from './EvolutionDashboard';
 import { PositionsDashboard } from './PositionsDashboard';
 
-type Page = 'positions' | 'dividends';
+type Page = 'positions' | 'dividends' | 'evolution';
 
 export const PortfolioDashboard: React.FC = () => {
   const { snapshots, loading, error } = useSnapshots();
@@ -30,6 +31,14 @@ export const PortfolioDashboard: React.FC = () => {
                 onClick={() => setActivePage('dividends')}
               >
                 Dividends
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activePage === 'evolution' ? 'active' : ''}`}
+                onClick={() => setActivePage('evolution')}
+              >
+                Evolution
               </button>
             </li>
           </ul>
@@ -60,6 +69,7 @@ export const PortfolioDashboard: React.FC = () => {
         <>
           {activePage === 'positions' && <PositionsDashboard snapshots={snapshots} />}
           {activePage === 'dividends' && <DividendsDashboard snapshots={snapshots} />}
+          {activePage === 'evolution' && <EvolutionDashboard snapshots={snapshots} />}
         </>
       )}
     </div>

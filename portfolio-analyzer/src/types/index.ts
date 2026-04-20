@@ -5,7 +5,12 @@ export interface Stock {
   marketValue: number;
   currentPrice: number;
   currency?: string;
-  tags?: string[];
+}
+
+export interface StockMetadata {
+  companyName?: string;
+  industryTags: string[];
+  typeTags: string[];
 }
 
 export interface DividendEntry {
@@ -22,7 +27,3 @@ export interface Portfolio {
   totalValue: number;
   lastUpdated: string;
 }
-
-export interface StockTags {
-    [ticker: string]: string[];
-  }

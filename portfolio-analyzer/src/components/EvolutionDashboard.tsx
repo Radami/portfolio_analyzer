@@ -236,25 +236,23 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
           No data found for <strong>{selectedTicker}</strong> in any snapshot.
         </div>
       ) : (
-        <>
-          <div className="card">
-            <div className="card-header d-flex justify-content-between align-items-center">
-              <span className="fw-semibold">{selectedTicker} — Evolution over time</span>
-              <span className="text-muted small">{dataPoints.length} snapshot{dataPoints.length !== 1 ? 's' : ''}</span>
-            </div>
-            <div className="card-body">
-              {dataPoints.length < 2 ? (
-                <p className="text-muted text-center py-4">
-                  Only one snapshot available for {selectedTicker}. Add more snapshots to see trends.
-                </p>
-              ) : (
-                <div style={{ height: 'calc(100vh - 220px)' }}>
-                  <Line data={chartData} options={chartOptions} />
-                </div>
-              )}
-            </div>
+        <div className="card">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <span className="fw-semibold">{selectedTicker} — Evolution over time</span>
+            <span className="text-muted small">{dataPoints.length} snapshot{dataPoints.length !== 1 ? 's' : ''}</span>
           </div>
-        </>
+          <div className="card-body">
+            {dataPoints.length < 2 ? (
+              <p className="text-muted text-center py-4">
+                Only one snapshot available for {selectedTicker}. Add more snapshots to see trends.
+              </p>
+            ) : (
+              <div style={{ height: 'calc(100vh - 220px)' }}>
+                <Line data={chartData} options={chartOptions} />
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -57,7 +57,6 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, g
 
   const doughnutOptions = {
     responsive: true,
-    hover: { mode: null as any },
     plugins: { legend: { display: false }, tooltip: { enabled: false } },
   };
 

@@ -1,24 +1,21 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { getTagColor } from '../data/tagDefinitions';
-import { useStockMetadata } from '../hooks/useStockMetadata';
-import { Stock } from '../types';
+import { Stock, StockMetadata } from '../types';
 
 interface StockTableProps {
   stocks: Stock[];
-  selectedTicker?: string;
-  onStockSelect?: (ticker: string | null) => void;
+  getMetadata: (ticker: string) => StockMetadata;
+  getAllTags: () => string[];
 }
 
 type SortField = 'ticker' | 'position' | 'marketValue' | 'costBasis' | 'unrealizedPL' | 'percentOfPortfolio' | 'currentPrice';
 type SortDirection = 'asc' | 'desc';
 
-export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, onStockSelect }) => {
+export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, getAllTags }) => {
   const [sortField, setSortField] = useState<SortField>('ticker');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
-  const { getMetadata, getAllTags } = useStockMetadata();
 
   const renderTagBadge = (tag: string) => {
     const { bg, color } = getTagColor(tag);
@@ -30,7 +27,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, 
   };
 
   const formatCurrency = (price: number, currency?: string) => {
-    if (!price) return 'N/A';
+    if (price == null) return 'N/A';
     if (currency === 'JPY') {
       return new Intl.NumberFormat('ja-JP', {
         style: 'currency', currency: 'JPY',
@@ -66,14 +63,16 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, 
     ? stocks
     : stocks.filter(stock => {
         const m = getMetadata(stock.ticker);
-        const allTags = new Set([...m.industryTags, ...m.typeTags, ]);
+        const allTags = new Set([...m.industryTags, ...m.typeTags]);
         return selectedTags.every(tag => allTags.has(tag));
       });
 
-  const totalValue = filteredStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
+  const totalValue = stocks.reduce((sum, stock) => sum + stock.marketValue, 0);
+  const filteredTotalValue = filteredStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
 
   const sortedStocks = [...filteredStocks].sort((a, b) => {
-    let aValue: any, bValue: any;
+    let aValue: string | number;
+    let bValue: string | number;
     switch (sortField) {
       case 'ticker':       aValue = a.ticker; bValue = b.ticker; break;
       case 'position':     aValue = a.position; bValue = b.position; break;
@@ -81,19 +80,20 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, 
       case 'costBasis':    aValue = a.costBasis; bValue = b.costBasis; break;
       case 'unrealizedPL': aValue = a.marketValue - a.costBasis; bValue = b.marketValue - b.costBasis; break;
       case 'percentOfPortfolio':
-        aValue = (a.marketValue / totalValue) * 100;
-        bValue = (b.marketValue / totalValue) * 100;
+        aValue = (a.marketValue / filteredTotalValue) * 100;
+        bValue = (b.marketValue / filteredTotalValue) * 100;
         break;
       case 'currentPrice': aValue = a.currentPrice || 0; bValue = b.currentPrice || 0; break;
       default: return 0;
     }
-    if (typeof aValue === 'string') { aValue = aValue.toLowerCase(); bValue = bValue.toLowerCase(); }
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    const a2 = typeof aValue === 'string' ? aValue.toLowerCase() : aValue;
+    const b2 = typeof bValue === 'string' ? bValue.toLowerCase() : bValue;
+    if (a2 < b2) return sortDirection === 'asc' ? -1 : 1;
+    if (a2 > b2) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
-  const allTags = getAllTags();
+  const allTags = useMemo(() => getAllTags(), [getAllTags]);
   const isTagSelected = (tag: string) => selectedTags.includes(tag);
   const toggleTag = (tag: string) =>
     setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
@@ -160,18 +160,18 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, 
                   Unrealized P&L {getSortIcon('unrealizedPL')}
                 </th>
                 <th className="cursor-pointer" onClick={() => handleSort('percentOfPortfolio')}>
-                  % of Portfolio {getSortIcon('percentOfPortfolio')}
+                  % of Selection {getSortIcon('percentOfPortfolio')}
                 </th>
               </tr>
             </thead>
             <tbody>
               {sortedStocks.map(stock => {
                 const unrealizedPL = stock.marketValue - stock.costBasis;
-                const percentOfPortfolio = (stock.marketValue / totalValue) * 100;
+                const percentOfPortfolio = (stock.marketValue / filteredTotalValue) * 100;
                 const meta = getMetadata(stock.ticker);
                 const allStockTags = [...meta.industryTags, ...meta.typeTags];
                 return (
-                  <tr key={stock.ticker} className="cursor-pointer">
+                  <tr key={stock.ticker}>
                     <td style={{ whiteSpace: 'nowrap' }}>
                       <div className="fw-bold">{stock.ticker}</div>
                       {meta.companyName && (

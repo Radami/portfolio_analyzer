@@ -7,8 +7,9 @@ import {
   PointElement,
   Title,
   Tooltip,
+  TooltipItem,
 } from 'chart.js';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Snapshot } from '../hooks/useSnapshots';
 
@@ -94,10 +95,16 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
     });
   };
 
-  const hasLeftAxis = METRICS.some(m => m.axis === 'y' && selectedMetrics.has(m.key));
-  const hasRightAxis = METRICS.some(m => m.axis === 'y1' && selectedMetrics.has(m.key));
+  const hasLeftAxis = useMemo(
+    () => METRICS.some(m => m.axis === 'y' && selectedMetrics.has(m.key)),
+    [selectedMetrics]
+  );
+  const hasRightAxis = useMemo(
+    () => METRICS.some(m => m.axis === 'y1' && selectedMetrics.has(m.key)),
+    [selectedMetrics]
+  );
 
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: dataPoints.map(d => d.label),
     datasets: METRICS.filter(m => selectedMetrics.has(m.key)).map(m => ({
       label: m.label,
@@ -111,25 +118,30 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
       pointRadius: dataPoints.length > 24 ? 2 : 4,
       pointHoverRadius: 6,
     })),
-  };
+  }), [dataPoints, selectedMetrics]);
 
-  const metricByKey = Object.fromEntries(METRICS.map(m => [m.key, m]));
+  const tooltipLabel = useCallback((ctx: TooltipItem<'line'>) => {
+    const metric = METRICS.find(m => m.label === ctx.dataset.label);
+    const fmt = metric?.format ?? 'number';
+    return ` ${ctx.dataset.label}: ${formatValue(ctx.parsed.y, fmt)}`;
+  }, []);
 
-  const chartOptions = {
+  const rightAxisTick = useCallback((v: number | string) => {
+    const rightMetrics = METRICS.filter(m => m.axis === 'y1' && selectedMetrics.has(m.key));
+    if (rightMetrics.length === 1 && rightMetrics[0].format === 'percent') {
+      return `${Number(v).toFixed(1)}%`;
+    }
+    return Number(v).toLocaleString('en-US', { maximumFractionDigits: 2 });
+  }, [selectedMetrics]);
+
+  const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: 'index' as const, intersect: false },
     plugins: {
       legend: { position: 'top' as const },
       tooltip: {
-        callbacks: {
-          label: (ctx: any) => {
-            const metric = metricByKey[ctx.dataset.label.replace(/ /g, '') as MetricKey]
-              ?? METRICS.find(m => m.label === ctx.dataset.label);
-            const fmt = metric?.format ?? 'number';
-            return ` ${ctx.dataset.label}: ${formatValue(ctx.parsed.y, fmt)}`;
-          },
-        },
+        callbacks: { label: tooltipLabel },
       },
     },
     scales: {
@@ -137,25 +149,18 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
       y: {
         display: hasLeftAxis,
         position: 'left' as const,
-        ticks: { callback: (v: any) => formatCurrency(v) },
+        ticks: { callback: (v: number | string) => formatCurrency(Number(v)) },
         title: { display: true, text: 'USD Value' },
       },
       y1: {
         display: hasRightAxis,
         position: 'right' as const,
         grid: { drawOnChartArea: false },
-        ticks: {
-          callback: (v: any) => {
-            // Show as percent if only % of Portfolio is on this axis, otherwise raw
-            const rightMetrics = METRICS.filter(m => m.axis === 'y1' && selectedMetrics.has(m.key));
-            if (rightMetrics.length === 1 && rightMetrics[0].format === 'percent') return `${(v as number).toFixed(1)}%`;
-            return (v as number).toLocaleString('en-US', { maximumFractionDigits: 2 });
-          },
-        },
+        ticks: { callback: rightAxisTick },
         title: { display: true, text: 'Shares / Price / %' },
       },
     },
-  };
+  }), [hasLeftAxis, hasRightAxis, tooltipLabel, rightAxisTick]);
 
   return (
     <div>
@@ -231,25 +236,23 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
           No data found for <strong>{selectedTicker}</strong> in any snapshot.
         </div>
       ) : (
-        <>
-          <div className="card">
-            <div className="card-header d-flex justify-content-between align-items-center">
-              <span className="fw-semibold">{selectedTicker} — Evolution over time</span>
-              <span className="text-muted small">{dataPoints.length} snapshot{dataPoints.length !== 1 ? 's' : ''}</span>
-            </div>
-            <div className="card-body">
-              {dataPoints.length < 2 ? (
-                <p className="text-muted text-center py-4">
-                  Only one snapshot available for {selectedTicker}. Add more snapshots to see trends.
-                </p>
-              ) : (
-                <div style={{ height: 'calc(100vh - 220px)' }}>
-                  <Line data={chartData} options={chartOptions} />
-                </div>
-              )}
-            </div>
+        <div className="card">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <span className="fw-semibold">{selectedTicker} — Evolution over time</span>
+            <span className="text-muted small">{dataPoints.length} snapshot{dataPoints.length !== 1 ? 's' : ''}</span>
           </div>
-        </>
+          <div className="card-body">
+            {dataPoints.length < 2 ? (
+              <p className="text-muted text-center py-4">
+                Only one snapshot available for {selectedTicker}. Add more snapshots to see trends.
+              </p>
+            ) : (
+              <div style={{ height: 'calc(100vh - 220px)' }}>
+                <Line data={chartData} options={chartOptions} />
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

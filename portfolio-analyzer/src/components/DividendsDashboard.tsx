@@ -1,5 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useMemo, useState } from 'react';
+import { useSnapshotsByYear } from '../hooks/useSnapshotsByYear';
 import { Snapshot } from '../hooks/useSnapshots';
 import { DividendEntry } from '../types';
 
@@ -8,7 +9,7 @@ interface DividendsDashboardProps {
 }
 
 type ViewMode = 'monthly' | 'yearly';
-type SortKey = 'ticker' | 'totalAmount' | 'payments' | 'latestPerShare' | 'pct';
+type SortKey = 'ticker' | 'totalAmount' | 'payments' | 'latestPerShare';
 type SortDir = 'asc' | 'desc';
 
 interface TickerSummary {
@@ -56,19 +57,7 @@ function buildTickerSummaries(dividends: DividendEntry[]): TickerSummary[] {
 export const DividendsDashboard: React.FC<DividendsDashboardProps> = ({ snapshots }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('yearly');
 
-  // --- Shared: group snapshots by year ---
-  const { years, byYear } = useMemo(() => {
-    const map = new Map<number, { snapshot: Snapshot; index: number }[]>();
-    snapshots.forEach((s, i) => {
-      const year = new Date(s.date).getFullYear();
-      if (!map.has(year)) map.set(year, []);
-      map.get(year)!.push({ snapshot: s, index: i });
-    });
-    return {
-      years: Array.from(map.keys()).sort((a, b) => a - b),
-      byYear: map,
-    };
-  }, [snapshots]);
+  const { years, byYear } = useSnapshotsByYear(snapshots);
 
   // --- Yearly state ---
   const defaultYear = useMemo(
@@ -124,7 +113,7 @@ export const DividendsDashboard: React.FC<DividendsDashboardProps> = ({ snapshot
     return [...perTicker].sort((a, b) => {
       let cmp = 0;
       if (sortKey === 'ticker') cmp = a.ticker.localeCompare(b.ticker);
-      else if (sortKey === 'totalAmount' || sortKey === 'pct') cmp = a.totalAmount - b.totalAmount;
+      else if (sortKey === 'totalAmount') cmp = a.totalAmount - b.totalAmount;
       else if (sortKey === 'payments') cmp = a.payments - b.payments;
       else if (sortKey === 'latestPerShare') cmp = a.latestPerShare - b.latestPerShare;
       return sortDir === 'asc' ? cmp : -cmp;
@@ -290,8 +279,8 @@ export const DividendsDashboard: React.FC<DividendsDashboardProps> = ({ snapshot
                         <th style={{ cursor: 'pointer' }} className="text-end" onClick={() => handleSort('totalAmount')}>
                           Total Received {sortIcon('totalAmount')}
                         </th>
-                        <th style={{ cursor: 'pointer' }} className="text-end" onClick={() => handleSort('pct')}>
-                          % of Total {sortIcon('pct')}
+                        <th style={{ cursor: 'pointer' }} className="text-end" onClick={() => handleSort('totalAmount')}>
+                          % of Total {sortIcon('totalAmount')}
                         </th>
                         <th style={{ cursor: 'pointer' }} className="text-end" onClick={() => handleSort('payments')}>
                           Payments {sortIcon('payments')}

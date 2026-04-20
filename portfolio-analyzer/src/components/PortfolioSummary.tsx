@@ -1,19 +1,18 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { ArcElement, Chart as ChartJS, Legend } from 'chart.js';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Doughnut } from 'react-chartjs-2';
-import { TAG_COLORS } from '../data/tagDefinitions';
-import { useStockMetadata } from '../hooks/useStockMetadata';
+import { INSTRUMENT_TAGS, STRATEGY_TAGS, TAG_COLORS } from '../data/tagDefinitions';
 import { Portfolio, StockMetadata } from '../types';
 
 ChartJS.register(ArcElement, Legend);
 
 interface PortfolioSummaryProps {
   portfolio: Portfolio;
+  getMetadata: (ticker: string) => StockMetadata;
 }
 
-export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio }) => {
-  const { getMetadata } = useStockMetadata();
+export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, getMetadata }) => {
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', {
@@ -23,42 +22,15 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio })
 
   const formatPercentage = (value: number) => `${value.toFixed(2)}%`;
 
+  const totalCostBasis = portfolio.stocks.reduce((sum, s) => sum + s.costBasis, 0);
   const totalUnrealizedPL = portfolio.stocks.reduce(
     (sum, s) => sum + (s.marketValue - s.costBasis), 0
   );
   const totalUnrealizedPLPct = (totalUnrealizedPL / portfolio.totalValue) * 100;
   const plColor = (v: number) => (v >= 0 ? 'text-success' : 'text-danger');
 
-  const buildDoughnutData = (tagExtractor: (m: StockMetadata) => string | undefined) => {
-    const totals: Record<string, number> = {};
-    for (const stock of portfolio.stocks) {
-      const tag = tagExtractor(getMetadata(stock.ticker));
-      if (!tag) continue;
-      totals[tag] = (totals[tag] ?? 0) + stock.marketValue;
-    }
-    const labels = Object.keys(totals);
-    const total = labels.reduce((s, l) => s + totals[l], 0);
-    return {
-      chartData: {
-        labels,
-        datasets: [{
-          data: labels.map(l => totals[l]),
-          backgroundColor: labels.map(l => TAG_COLORS[l]?.bg ?? '#e9ecef'),
-          borderWidth: 1,
-        }],
-      },
-      legendItems: labels.map(l => ({
-        label: l,
-        value: totals[l],
-        pct: (totals[l] / total) * 100,
-        color: TAG_COLORS[l]?.bg ?? '#e9ecef',
-      })),
-    };
-  };
-
   const doughnutOptions = {
     responsive: true,
-    hover: { mode: null as any },
     plugins: { legend: { display: false }, tooltip: { enabled: false } },
   };
 
@@ -79,12 +51,41 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio })
     </table>
   );
 
-  const strategyData = buildDoughnutData(m =>
-    m.typeTags.find(t => ['Growth', 'Value', 'Income'].includes(t))
-  );
-  const instrumentData = buildDoughnutData(m =>
-    m.typeTags.find(t => ['Stock', 'ETF', 'REIT', 'Bond'].includes(t))
-  );
+  const strategyData = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const stock of portfolio.stocks) {
+      const tag = getMetadata(stock.ticker).typeTags.find(t => (STRATEGY_TAGS as readonly string[]).includes(t as string));
+      if (!tag) continue;
+      totals[tag] = (totals[tag] ?? 0) + stock.marketValue;
+    }
+    const labels = Object.keys(totals);
+    const total = labels.reduce((s, l) => s + totals[l], 0);
+    return {
+      chartData: {
+        labels,
+        datasets: [{ data: labels.map(l => totals[l]), backgroundColor: labels.map(l => TAG_COLORS[l]?.bg ?? '#e9ecef'), borderWidth: 1 }],
+      },
+      legendItems: labels.map(l => ({ label: l, value: totals[l], pct: (totals[l] / total) * 100, color: TAG_COLORS[l]?.bg ?? '#e9ecef' })),
+    };
+  }, [portfolio.stocks, getMetadata]);
+
+  const instrumentData = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const stock of portfolio.stocks) {
+      const tag = getMetadata(stock.ticker).typeTags.find(t => (INSTRUMENT_TAGS as readonly string[]).includes(t));
+      if (!tag) continue;
+      totals[tag] = (totals[tag] ?? 0) + stock.marketValue;
+    }
+    const labels = Object.keys(totals);
+    const total = labels.reduce((s, l) => s + totals[l], 0);
+    return {
+      chartData: {
+        labels,
+        datasets: [{ data: labels.map(l => totals[l]), backgroundColor: labels.map(l => TAG_COLORS[l]?.bg ?? '#e9ecef'), borderWidth: 1 }],
+      },
+      legendItems: labels.map(l => ({ label: l, value: totals[l], pct: (totals[l] / total) * 100, color: TAG_COLORS[l]?.bg ?? '#e9ecef' })),
+    };
+  }, [portfolio.stocks, getMetadata]);
 
   return (
     <div className="row">
@@ -101,9 +102,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio })
         <div className="card text-center">
           <div className="card-body">
             <h6 className="card-title text-muted">Total Cost Basis</h6>
-            <h4 className="card-text fw-bold">
-              {formatCurrency(portfolio.stocks.reduce((sum, s) => sum + s.costBasis, 0))}
-            </h4>
+            <h4 className="card-text fw-bold">{formatCurrency(totalCostBasis)}</h4>
           </div>
         </div>
       </div>
@@ -150,10 +149,10 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio })
           <div className="card-header"><h6 className="mb-0">Instrument Type</h6></div>
           <div className="card-body d-flex justify-content-center">
             <div className="d-flex gap-4 align-items-center">
-              <div>
+              <div style={{ width: '160px', flexShrink: 0 }}>
                 <Doughnut data={instrumentData.chartData} options={doughnutOptions} />
               </div>
-              <div style={{ width: '160px', flexShrink: 0 }}>{renderLegend(instrumentData.legendItems)}</div>
+              <div className="flex-grow-1">{renderLegend(instrumentData.legendItems)}</div>
             </div>
           </div>
         </div>

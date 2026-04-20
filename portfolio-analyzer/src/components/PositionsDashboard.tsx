@@ -1,8 +1,8 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useState } from 'react';
+import { Snapshot } from '../hooks/useSnapshots';
 import { useSnapshotsByYear } from '../hooks/useSnapshotsByYear';
 import { useStockMetadata } from '../hooks/useStockMetadata';
-import { Snapshot } from '../hooks/useSnapshots';
 import { PortfolioSummary } from './PortfolioSummary';
 import { StockTable } from './StockTable';
 

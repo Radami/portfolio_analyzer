@@ -70,7 +70,8 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, get
   const totalValue = filteredStocks.reduce((sum, stock) => sum + stock.marketValue, 0);
 
   const sortedStocks = [...filteredStocks].sort((a, b) => {
-    let aValue: any, bValue: any;
+    let aValue: string | number;
+    let bValue: string | number;
     switch (sortField) {
       case 'ticker':       aValue = a.ticker; bValue = b.ticker; break;
       case 'position':     aValue = a.position; bValue = b.position; break;
@@ -84,9 +85,10 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, get
       case 'currentPrice': aValue = a.currentPrice || 0; bValue = b.currentPrice || 0; break;
       default: return 0;
     }
-    if (typeof aValue === 'string') { aValue = aValue.toLowerCase(); bValue = bValue.toLowerCase(); }
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    const a2 = typeof aValue === 'string' ? aValue.toLowerCase() : aValue;
+    const b2 = typeof bValue === 'string' ? bValue.toLowerCase() : bValue;
+    if (a2 < b2) return sortDirection === 'asc' ? -1 : 1;
+    if (a2 > b2) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 

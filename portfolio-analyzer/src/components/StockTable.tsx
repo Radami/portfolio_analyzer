@@ -171,7 +171,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, get
                 const meta = getMetadata(stock.ticker);
                 const allStockTags = [...meta.industryTags, ...meta.typeTags];
                 return (
-                  <tr key={stock.ticker} className="cursor-pointer">
+                  <tr key={stock.ticker}>
                     <td style={{ whiteSpace: 'nowrap' }}>
                       <div className="fw-bold">{stock.ticker}</div>
                       {meta.companyName && (

@@ -1,5 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useMemo, useState } from 'react';
+import { useSnapshotsByYear } from '../hooks/useSnapshotsByYear';
 import { Snapshot } from '../hooks/useSnapshots';
 import { DividendEntry } from '../types';
 
@@ -56,19 +57,7 @@ function buildTickerSummaries(dividends: DividendEntry[]): TickerSummary[] {
 export const DividendsDashboard: React.FC<DividendsDashboardProps> = ({ snapshots }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('yearly');
 
-  // --- Shared: group snapshots by year ---
-  const { years, byYear } = useMemo(() => {
-    const map = new Map<number, { snapshot: Snapshot; index: number }[]>();
-    snapshots.forEach((s, i) => {
-      const year = new Date(s.date).getFullYear();
-      if (!map.has(year)) map.set(year, []);
-      map.get(year)!.push({ snapshot: s, index: i });
-    });
-    return {
-      years: Array.from(map.keys()).sort((a, b) => a - b),
-      byYear: map,
-    };
-  }, [snapshots]);
+  const { years, byYear } = useSnapshotsByYear(snapshots);
 
   // --- Yearly state ---
   const defaultYear = useMemo(

@@ -1,5 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
+import { useSnapshotsByYear } from '../hooks/useSnapshotsByYear';
 import { useStockMetadata } from '../hooks/useStockMetadata';
 import { Snapshot } from '../hooks/useSnapshots';
 import { PortfolioSummary } from './PortfolioSummary';
@@ -12,23 +13,10 @@ interface PositionsDashboardProps {
 export const PositionsDashboard: React.FC<PositionsDashboardProps> = ({ snapshots }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { getMetadata, getAllTags } = useStockMetadata();
+  const { years, byYear } = useSnapshotsByYear(snapshots);
 
   const effectiveIndex = selectedIndex ?? snapshots.length - 1;
   const snapshot = snapshots[effectiveIndex] ?? null;
-
-  // Derive sorted unique years and a lookup from year → snapshots
-  const { years, byYear } = useMemo(() => {
-    const map = new Map<number, { snapshot: Snapshot; index: number }[]>();
-    snapshots.forEach((s, i) => {
-      const year = new Date(s.date).getFullYear();
-      if (!map.has(year)) map.set(year, []);
-      map.get(year)!.push({ snapshot: s, index: i });
-    });
-    return {
-      years: Array.from(map.keys()).sort((a, b) => a - b),
-      byYear: map,
-    };
-  }, [snapshots]);
 
   const selectedYear: number | null = snapshot ? new Date(snapshot.date).getFullYear() : null;
 

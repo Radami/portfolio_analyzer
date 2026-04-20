@@ -149,10 +149,10 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, g
           <div className="card-header"><h6 className="mb-0">Instrument Type</h6></div>
           <div className="card-body d-flex justify-content-center">
             <div className="d-flex gap-4 align-items-center">
-              <div>
+              <div style={{ width: '160px', flexShrink: 0 }}>
                 <Doughnut data={instrumentData.chartData} options={doughnutOptions} />
               </div>
-              <div style={{ width: '160px', flexShrink: 0 }}>{renderLegend(instrumentData.legendItems)}</div>
+              <div className="flex-grow-1">{renderLegend(instrumentData.legendItems)}</div>
             </div>
           </div>
         </div>

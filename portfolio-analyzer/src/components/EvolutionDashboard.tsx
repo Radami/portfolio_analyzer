@@ -8,7 +8,7 @@ import {
   Title,
   Tooltip,
 } from 'chart.js';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Snapshot } from '../hooks/useSnapshots';
 
@@ -94,10 +94,16 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
     });
   };
 
-  const hasLeftAxis = METRICS.some(m => m.axis === 'y' && selectedMetrics.has(m.key));
-  const hasRightAxis = METRICS.some(m => m.axis === 'y1' && selectedMetrics.has(m.key));
+  const hasLeftAxis = useMemo(
+    () => METRICS.some(m => m.axis === 'y' && selectedMetrics.has(m.key)),
+    [selectedMetrics]
+  );
+  const hasRightAxis = useMemo(
+    () => METRICS.some(m => m.axis === 'y1' && selectedMetrics.has(m.key)),
+    [selectedMetrics]
+  );
 
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: dataPoints.map(d => d.label),
     datasets: METRICS.filter(m => selectedMetrics.has(m.key)).map(m => ({
       label: m.label,
@@ -111,22 +117,30 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
       pointRadius: dataPoints.length > 24 ? 2 : 4,
       pointHoverRadius: 6,
     })),
-  };
+  }), [dataPoints, selectedMetrics]);
 
-  const chartOptions = {
+  const tooltipLabel = useCallback((ctx: any) => {
+    const metric = METRICS.find(m => m.label === ctx.dataset.label);
+    const fmt = metric?.format ?? 'number';
+    return ` ${ctx.dataset.label}: ${formatValue(ctx.parsed.y, fmt)}`;
+  }, []);
+
+  const rightAxisTick = useCallback((v: any) => {
+    const rightMetrics = METRICS.filter(m => m.axis === 'y1' && selectedMetrics.has(m.key));
+    if (rightMetrics.length === 1 && rightMetrics[0].format === 'percent') {
+      return `${(v as number).toFixed(1)}%`;
+    }
+    return (v as number).toLocaleString('en-US', { maximumFractionDigits: 2 });
+  }, [selectedMetrics]);
+
+  const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: 'index' as const, intersect: false },
     plugins: {
       legend: { position: 'top' as const },
       tooltip: {
-        callbacks: {
-          label: (ctx: any) => {
-            const metric = METRICS.find(m => m.label === ctx.dataset.label);
-            const fmt = metric?.format ?? 'number';
-            return ` ${ctx.dataset.label}: ${formatValue(ctx.parsed.y, fmt)}`;
-          },
-        },
+        callbacks: { label: tooltipLabel },
       },
     },
     scales: {
@@ -141,18 +155,11 @@ export const EvolutionDashboard: React.FC<Props> = ({ snapshots }) => {
         display: hasRightAxis,
         position: 'right' as const,
         grid: { drawOnChartArea: false },
-        ticks: {
-          callback: (v: any) => {
-            // Show as percent if only % of Portfolio is on this axis, otherwise raw
-            const rightMetrics = METRICS.filter(m => m.axis === 'y1' && selectedMetrics.has(m.key));
-            if (rightMetrics.length === 1 && rightMetrics[0].format === 'percent') return `${(v as number).toFixed(1)}%`;
-            return (v as number).toLocaleString('en-US', { maximumFractionDigits: 2 });
-          },
-        },
+        ticks: { callback: rightAxisTick },
         title: { display: true, text: 'Shares / Price / %' },
       },
     },
-  };
+  }), [hasLeftAxis, hasRightAxis, tooltipLabel, rightAxisTick]);
 
   return (
     <div>

@@ -1,5 +1,5 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { getTagColor } from '../data/tagDefinitions';
 import { Stock, StockMetadata } from '../types';
 
@@ -93,7 +93,7 @@ export const StockTable: React.FC<StockTableProps> = ({ stocks, getMetadata, get
     return 0;
   });
 
-  const allTags = getAllTags();
+  const allTags = useMemo(() => getAllTags(), [getAllTags]);
   const isTagSelected = (tag: string) => selectedTags.includes(tag);
   const toggleTag = (tag: string) =>
     setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);

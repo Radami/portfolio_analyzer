@@ -3,7 +3,6 @@ import React, { useMemo, useState } from 'react';
 import { Snapshot } from '../hooks/useSnapshots';
 import { PortfolioSummary } from './PortfolioSummary';
 import { StockTable } from './StockTable';
-import { TickerPerformancePanel } from './TickerPerformancePanel';
 
 interface PositionsDashboardProps {
   snapshots: Snapshot[];
@@ -11,7 +10,6 @@ interface PositionsDashboardProps {
 
 export const PositionsDashboard: React.FC<PositionsDashboardProps> = ({ snapshots }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
 
   const effectiveIndex = selectedIndex ?? snapshots.length - 1;
   const snapshot = snapshots[effectiveIndex] ?? null;
@@ -35,9 +33,7 @@ export const PositionsDashboard: React.FC<PositionsDashboardProps> = ({ snapshot
   const handleYearSelect = (year: number) => {
     const entries = byYear.get(year);
     if (!entries?.length) return;
-    // Jump to the last month of the chosen year
     setSelectedIndex(entries[entries.length - 1].index);
-    setSelectedTicker(null);
   };
 
   return (
@@ -71,7 +67,7 @@ export const PositionsDashboard: React.FC<PositionsDashboardProps> = ({ snapshot
                   key={s.filename}
                   type="button"
                   className={`btn ${i === effectiveIndex ? 'btn-primary' : 'btn-outline-primary'}`}
-                  onClick={() => { setSelectedIndex(i); setSelectedTicker(null); }}
+                  onClick={() => setSelectedIndex(i)}
                 >
                   {s.label.replace(/\s*\d{4}$/, '')}
                 </button>
@@ -87,22 +83,9 @@ export const PositionsDashboard: React.FC<PositionsDashboardProps> = ({ snapshot
           <div className="col-12 mb-4">
             <PortfolioSummary portfolio={snapshot.portfolio} />
           </div>
-          <div className={selectedTicker ? 'col-8' : 'col-12'}>
-            <StockTable
-              stocks={snapshot.portfolio.stocks}
-              selectedTicker={selectedTicker ?? undefined}
-              onStockSelect={setSelectedTicker}
-            />
+          <div className="col-12">
+            <StockTable stocks={snapshot.portfolio.stocks} />
           </div>
-          {selectedTicker && (
-            <div className="col-4" style={{ position: 'sticky', top: '1rem', alignSelf: 'flex-start' }}>
-              <TickerPerformancePanel
-                ticker={selectedTicker}
-                snapshots={snapshots}
-                onClose={() => setSelectedTicker(null)}
-              />
-            </div>
-          )}
         </div>
       )}
     </>

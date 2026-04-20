@@ -6,14 +6,12 @@ import { Stock } from '../types';
 
 interface StockTableProps {
   stocks: Stock[];
-  selectedTicker?: string;
-  onStockSelect?: (ticker: string | null) => void;
 }
 
 type SortField = 'ticker' | 'position' | 'marketValue' | 'costBasis' | 'unrealizedPL' | 'percentOfPortfolio' | 'currentPrice';
 type SortDirection = 'asc' | 'desc';
 
-export const StockTable: React.FC<StockTableProps> = ({ stocks, selectedTicker, onStockSelect }) => {
+export const StockTable: React.FC<StockTableProps> = ({ stocks }) => {
   const [sortField, setSortField] = useState<SortField>('ticker');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);

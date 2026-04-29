@@ -6,6 +6,10 @@ interface SnapshotEntry {
   index: number;
 }
 
+// Derives two structures from the flat snapshots array for use by the year/month picker:
+// - years: sorted list of distinct years present in the data
+// - byYear: map from year → [{snapshot, index}], where index is the position in the original
+//   array so the picker can set selectedIndex without searching.
 export const useSnapshotsByYear = (snapshots: Snapshot[]) => {
   return useMemo(() => {
     const map = new Map<number, SnapshotEntry[]>();

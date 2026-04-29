@@ -9,6 +9,9 @@ export interface Snapshot {
   portfolio: Portfolio;
 }
 
+// Fetches /data/manifest.json to discover CSV filenames, then loads and parses each CSV in
+// parallel into a Snapshot (stocks, dividends, date, label). Results are filtered for validity
+// and sorted chronologically. The AbortController cancels in-flight requests on unmount.
 export const useSnapshots = () => {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [loading, setLoading] = useState(true);

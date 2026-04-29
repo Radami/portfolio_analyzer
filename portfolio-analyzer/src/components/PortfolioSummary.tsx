@@ -35,16 +35,16 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, g
   };
 
   const renderLegend = (items: { label: string; value: number; pct: number; color: string }[]) => (
-    <table className="w-100 mt-3" style={{ fontSize: '0.85rem' }}>
+    <table className="mt-2" style={{ fontSize: '0.8rem', lineHeight: '1.3' }}>
       <tbody>
         {items.map(item => (
           <tr key={item.label}>
-            <td style={{ width: '12px', paddingRight: '8px' }}>
-              <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '2px', backgroundColor: item.color }} />
+            <td style={{ width: '10px', paddingRight: '6px', paddingTop: '2px', paddingBottom: '2px' }}>
+              <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', backgroundColor: item.color }} />
             </td>
             <td className="fw-medium">{item.label}</td>
             <td className="text-end text-muted">{item.pct.toFixed(1)}%</td>
-            <td className="text-end ps-3">{formatCurrency(item.value)}</td>
+            <td className="text-end ps-2">{formatCurrency(item.value)}</td>
           </tr>
         ))}
       </tbody>
@@ -88,81 +88,54 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolio, g
   }, [portfolio.stocks, getMetadata]);
 
   return (
-    <div className="row">
-      <div className="col-md-3">
-        <div className="card text-center">
-          <div className="card-body">
-            <h6 className="card-title text-muted">Total Value</h6>
-            <h4 className="card-text fw-bold">{formatCurrency(portfolio.totalValue)}</h4>
-          </div>
-        </div>
-      </div>
+    <div className="row g-3 align-items-stretch">
 
       <div className="col-md-3">
-        <div className="card text-center">
-          <div className="card-body">
-            <h6 className="card-title text-muted">Total Cost Basis</h6>
-            <h4 className="card-text fw-bold">{formatCurrency(totalCostBasis)}</h4>
-          </div>
-        </div>
-      </div>
-
-      <div className="col-md-3">
-        <div className="card text-center">
-          <div className="card-body">
-            <h6 className="card-title text-muted">Unrealized P&L</h6>
-            <h4 className={`card-text fw-bold ${plColor(totalUnrealizedPL)}`}>
-              {formatCurrency(totalUnrealizedPL)}
-            </h4>
-            <small className={plColor(totalUnrealizedPLPct)}>
-              {formatPercentage(totalUnrealizedPLPct)}
-            </small>
-          </div>
-        </div>
-      </div>
-
-      <div className="col-md-3">
-        <div className="card text-center">
-          <div className="card-body">
-            <h6 className="card-title text-muted">Number of Stocks</h6>
-            <h4 className="card-text fw-bold">{portfolio.stocks.length}</h4>
-          </div>
-        </div>
-      </div>
-
-      <div className="col-md-6 mt-3">
         <div className="card h-100">
-          <div className="card-header"><h6 className="mb-0">Strategy</h6></div>
-          <div className="card-body d-flex justify-content-center">
-            <div className="d-flex gap-4 align-items-center">
-              <div style={{ width: '160px', flexShrink: 0 }}>
+          <div className="card-body d-flex flex-column justify-content-center gap-3 py-3">
+            <div>
+              <div className="fw-semibold">Total Value</div>
+              <div className="fs-5">{formatCurrency(portfolio.totalValue)}</div>
+            </div>
+            <div>
+              <div className="fw-semibold">Cost Basis</div>
+              <div className="fs-5">{formatCurrency(totalCostBasis)}</div>
+            </div>
+            <div>
+              <div className="fw-semibold">Unrealized P&L</div>
+              <div className={`fs-5 ${plColor(totalUnrealizedPL)}`}>
+                {formatCurrency(totalUnrealizedPL)}
+              </div>
+              <div className={`small ${plColor(totalUnrealizedPLPct)}`}>
+                {formatPercentage(totalUnrealizedPLPct)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="col-md-9">
+        <div className="card h-100">
+          <div className="card-body d-flex gap-4">
+            <div className="d-flex flex-column align-items-center flex-grow-1">
+              <div className="text-muted small fw-semibold mb-2">Strategy</div>
+              <div style={{ width: '130px' }}>
                 <Doughnut data={strategyData.chartData} options={doughnutOptions} />
               </div>
-              <div className="flex-grow-1">{renderLegend(strategyData.legendItems)}</div>
+              {renderLegend(strategyData.legendItems)}
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="col-md-6 mt-3">
-        <div className="card h-100">
-          <div className="card-header"><h6 className="mb-0">Instrument Type</h6></div>
-          <div className="card-body d-flex justify-content-center">
-            <div className="d-flex gap-4 align-items-center">
-              <div style={{ width: '160px', flexShrink: 0 }}>
+            <div className="vr" />
+            <div className="d-flex flex-column align-items-center flex-grow-1">
+              <div className="text-muted small fw-semibold mb-2">Instrument Type</div>
+              <div style={{ width: '130px' }}>
                 <Doughnut data={instrumentData.chartData} options={doughnutOptions} />
               </div>
-              <div className="flex-grow-1">{renderLegend(instrumentData.legendItems)}</div>
+              {renderLegend(instrumentData.legendItems)}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="col-12 mt-2">
-        <small className="text-muted">
-          Last updated: {new Date(portfolio.lastUpdated).toLocaleString()}
-        </small>
-      </div>
     </div>
   );
 };

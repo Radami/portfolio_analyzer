@@ -86,10 +86,10 @@ export const PeriodPicker: React.FC<PeriodPickerProps> = ({
   };
 
   return (
-    <div className="d-flex flex-column gap-2">
+    <div className="d-flex flex-wrap align-items-center gap-3">
       {showViewToggle && (
         <div className="d-flex align-items-center gap-2">
-          <span className="text-muted me-1" style={{ minWidth: '70px' }}>View:</span>
+          <span className="text-muted me-1">View:</span>
           <div className="btn-group" role="group" aria-label="View mode">
             <button
               type="button"
@@ -113,7 +113,7 @@ export const PeriodPicker: React.FC<PeriodPickerProps> = ({
       {viewMode === 'monthly' && (
         <>
           <div className="d-flex align-items-center gap-2">
-            <span className="text-muted me-1" style={{ minWidth: '70px' }}>Year:</span>
+            <span className="text-muted me-1">Year:</span>
             <div className="btn-group flex-wrap" role="group" aria-label="Year">
               {years.map(year => (
                 <button
@@ -129,7 +129,7 @@ export const PeriodPicker: React.FC<PeriodPickerProps> = ({
           </div>
 
           <div className="d-flex align-items-center gap-2">
-            <span className="text-muted me-1" style={{ minWidth: '70px' }}>Month:</span>
+            <span className="text-muted me-1">Month:</span>
             <div className="btn-group flex-wrap" role="group" aria-label="Month">
               {/* Only show months that belong to the currently selected year */}
               {(selectedMonthYear !== null ? byYear.get(selectedMonthYear) ?? [] : []).map(({ snapshot: s, index: i }) => (
@@ -151,7 +151,7 @@ export const PeriodPicker: React.FC<PeriodPickerProps> = ({
       {/* Yearly mode: single row of year buttons; labels can be customised via yearLabel */}
       {viewMode === 'yearly' && (
         <div className="d-flex align-items-center gap-2">
-          <span className="text-muted me-1" style={{ minWidth: '70px' }}>Year:</span>
+          <span className="text-muted me-1">Year:</span>
           <div className="btn-group flex-wrap" role="group" aria-label="Year">
             {years.map(year => (
               <button

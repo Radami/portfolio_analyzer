@@ -42,6 +42,11 @@ export const PortfolioDashboard: React.FC = () => {
               </button>
             </li>
           </ul>
+          {snapshots.length > 0 && (
+            <small className="text-muted ms-auto">
+              Updated {new Date(snapshots[snapshots.length - 1].date).toLocaleDateString()}
+            </small>
+          )}
         </div>
       </div>
 

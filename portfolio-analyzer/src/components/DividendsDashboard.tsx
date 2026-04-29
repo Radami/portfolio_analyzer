@@ -3,12 +3,12 @@ import React, { useMemo, useState } from 'react';
 import { useSnapshotsByYear } from '../hooks/useSnapshotsByYear';
 import { Snapshot } from '../hooks/useSnapshots';
 import { DividendEntry } from '../types';
+import { PeriodPicker, PeriodSelection } from './PeriodPicker';
 
 interface DividendsDashboardProps {
   snapshots: Snapshot[];
 }
 
-type ViewMode = 'monthly' | 'yearly';
 type SortKey = 'ticker' | 'totalAmount' | 'payments' | 'latestPerShare';
 type SortDir = 'asc' | 'desc';
 
@@ -54,31 +54,17 @@ function buildTickerSummaries(dividends: DividendEntry[]): TickerSummary[] {
   return Array.from(map.values());
 }
 
+const yearLabel = (year: number) => (year === CURRENT_YEAR ? 'Year-to-date' : String(year));
+
 export const DividendsDashboard: React.FC<DividendsDashboardProps> = ({ snapshots }) => {
-  const [viewMode, setViewMode] = useState<ViewMode>('yearly');
+  const { years } = useSnapshotsByYear(snapshots);
 
-  const { years, byYear } = useSnapshotsByYear(snapshots);
-
-  // --- Yearly state ---
   const defaultYear = useMemo(
     () => (years.includes(CURRENT_YEAR) ? CURRENT_YEAR : years[years.length - 1] ?? CURRENT_YEAR),
     [years]
   );
-  const [selectedYear, setSelectedYear] = useState<number>(defaultYear);
 
-  // --- Monthly state ---
-  const [selectedSnapshotIndex, setSelectedSnapshotIndex] = useState<number | null>(null);
-  const effectiveSnapshotIndex = selectedSnapshotIndex ?? snapshots.length - 1;
-  const selectedSnapshot = snapshots[effectiveSnapshotIndex] ?? null;
-  const selectedMonthYear: number | null = selectedSnapshot
-    ? new Date(selectedSnapshot.date).getFullYear()
-    : null;
-
-  const handleMonthlyYearSelect = (year: number) => {
-    const entries = byYear.get(year);
-    if (!entries?.length) return;
-    setSelectedSnapshotIndex(entries[entries.length - 1].index);
-  };
+  const [selection, setSelection] = useState<PeriodSelection>({ mode: 'yearly', year: defaultYear });
 
   // --- Sorting ---
   const [sortKey, setSortKey] = useState<SortKey>('totalAmount');
@@ -86,13 +72,13 @@ export const DividendsDashboard: React.FC<DividendsDashboardProps> = ({ snapshot
 
   // --- Derive dividends for the active view ---
   const dividends = useMemo<DividendEntry[]>(() => {
-    if (viewMode === 'monthly') {
-      return selectedSnapshot?.portfolio.dividends ?? [];
+    if (selection.mode === 'monthly') {
+      return snapshots[selection.snapshotIndex]?.portfolio.dividends ?? [];
     }
     return snapshots
-      .filter(s => new Date(s.date).getFullYear() === selectedYear)
+      .filter(s => new Date(s.date).getFullYear() === selection.year)
       .flatMap(s => s.portfolio.dividends);
-  }, [viewMode, selectedSnapshot, snapshots, selectedYear]);
+  }, [selection, snapshots]);
 
   const perTicker = useMemo(() => buildTickerSummaries(dividends), [dividends]);
 
@@ -134,93 +120,22 @@ export const DividendsDashboard: React.FC<DividendsDashboardProps> = ({ snapshot
     return <span className="ms-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
   };
 
-  const yearLabel = (year: number) => (year === CURRENT_YEAR ? 'Year-to-date' : String(year));
-
-  const emptyMessage = viewMode === 'monthly'
+  const emptyMessage = selection.mode === 'monthly'
     ? 'No dividend data for this snapshot.'
-    : `No monthly statements found for ${yearLabel(selectedYear)} yet.`;
+    : `No monthly statements found for ${yearLabel(selection.year)} yet.`;
 
   return (
     <>
       {/* View mode toggle + period picker */}
       <div className="row mb-4">
-        <div className="col-12 d-flex flex-column gap-2">
-
-          {/* Toggle — always on its own row so it never shifts */}
-          <div className="d-flex align-items-center gap-2">
-            <span className="text-muted me-1" style={{ minWidth: '70px' }}>View:</span>
-            <div className="btn-group" role="group" aria-label="View mode">
-              <button
-                type="button"
-                className={`btn ${viewMode === 'monthly' ? 'btn-secondary' : 'btn-outline-secondary'}`}
-                onClick={() => setViewMode('monthly')}
-              >
-                Monthly
-              </button>
-              <button
-                type="button"
-                className={`btn ${viewMode === 'yearly' ? 'btn-secondary' : 'btn-outline-secondary'}`}
-                onClick={() => setViewMode('yearly')}
-              >
-                Yearly
-              </button>
-            </div>
-          </div>
-
-          {/* Period picker — changes per mode but toggle above is unaffected */}
-          {viewMode === 'monthly' && (
-            <>
-              <div className="d-flex align-items-center gap-2">
-                <span className="text-muted me-1" style={{ minWidth: '70px' }}>Year:</span>
-                <div className="btn-group flex-wrap" role="group" aria-label="Month view year">
-                  {years.map(year => (
-                    <button
-                      key={year}
-                      type="button"
-                      className={`btn ${year === selectedMonthYear ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => handleMonthlyYearSelect(year)}
-                    >
-                      {year}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="d-flex align-items-center gap-2">
-                <span className="text-muted me-1" style={{ minWidth: '70px' }}>Month:</span>
-                <div className="btn-group flex-wrap" role="group" aria-label="Month picker">
-                  {(selectedMonthYear !== null ? byYear.get(selectedMonthYear) ?? [] : []).map(({ snapshot: s, index: i }) => (
-                    <button
-                      key={s.filename}
-                      type="button"
-                      className={`btn ${i === effectiveSnapshotIndex ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => setSelectedSnapshotIndex(i)}
-                    >
-                      {s.label.replace(/\s*\d{4}$/, '')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {viewMode === 'yearly' && (
-            <div className="d-flex align-items-center gap-2">
-              <span className="text-muted me-1" style={{ minWidth: '70px' }}>Year:</span>
-              <div className="btn-group flex-wrap" role="group" aria-label="Year picker">
-                {years.map(year => (
-                  <button
-                    key={year}
-                    type="button"
-                    className={`btn ${year === selectedYear ? 'btn-primary' : 'btn-outline-primary'}`}
-                    onClick={() => setSelectedYear(year)}
-                  >
-                    {yearLabel(year)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
+        <div className="col-12">
+          <PeriodPicker
+            snapshots={snapshots}
+            showViewToggle
+            defaultViewMode="yearly"
+            yearLabel={yearLabel}
+            onChange={setSelection}
+          />
         </div>
       </div>
 

@@ -5,50 +5,37 @@ import { DividendsDashboard } from './DividendsDashboard';
 import { EvolutionDashboard } from './EvolutionDashboard';
 import { PositionsDashboard } from './PositionsDashboard';
 
-type Page = 'positions' | 'dividends' | 'evolution';
+type Page = 'Positions' | 'Dividends' | 'Evolution';
 
 export const PortfolioDashboard: React.FC = () => {
   const { snapshots, loading, error } = useSnapshots();
-  const [activePage, setActivePage] = useState<Page>('positions');
+  const [activePage, setActivePage] = useState<Page>('Positions');
 
   return (
-    <div className="container-fluid">
-      <div className="row mb-3">
-        <div className="col-12 d-flex align-items-center gap-3">
-          <h1 className="h2 mb-0 me-2">Portfolio Analyzer</h1>
-          <ul className="nav nav-tabs border-0">
-            <li className="nav-item">
+    <div>
+      {/* Top navbar with inline pills */}
+      <nav className="navbar navbar-dark bg-dark px-4 gap-4">
+        <span className="navbar-brand fw-semibold mb-0">Portfolio Analyzer</span>
+        <ul className="nav nav-pills gap-1">
+          {(['Positions', 'Dividends', 'Evolution'] as Page[]).map(page => (
+            <li className="nav-item" key={page}>
               <button
-                className={`nav-link ${activePage === 'positions' ? 'active' : ''}`}
-                onClick={() => setActivePage('positions')}
+                className={`nav-link ${activePage === page ? 'active' : 'text-secondary'}`}
+                onClick={() => setActivePage(page)}
               >
-                Positions
+                {page}
               </button>
             </li>
-            <li className="nav-item">
-              <button
-                className={`nav-link ${activePage === 'dividends' ? 'active' : ''}`}
-                onClick={() => setActivePage('dividends')}
-              >
-                Dividends
-              </button>
-            </li>
-            <li className="nav-item">
-              <button
-                className={`nav-link ${activePage === 'evolution' ? 'active' : ''}`}
-                onClick={() => setActivePage('evolution')}
-              >
-                Evolution
-              </button>
-            </li>
-          </ul>
-          {snapshots.length > 0 && (
-            <small className="text-muted ms-auto">
-              Updated {new Date(snapshots[snapshots.length - 1].date).toLocaleDateString()}
-            </small>
-          )}
-        </div>
-      </div>
+          ))}
+        </ul>
+        {snapshots.length > 0 && (
+          <small className="text-secondary ms-auto">
+            Updated {new Date(snapshots[snapshots.length - 1].date).toLocaleDateString()}
+          </small>
+        )}
+      </nav>
+
+      <div className="container-fluid pt-4">
 
       {loading && (
         <div className="text-center py-5">
@@ -72,11 +59,12 @@ export const PortfolioDashboard: React.FC = () => {
 
       {!loading && snapshots.length > 0 && (
         <>
-          {activePage === 'positions' && <PositionsDashboard snapshots={snapshots} />}
-          {activePage === 'dividends' && <DividendsDashboard snapshots={snapshots} />}
-          {activePage === 'evolution' && <EvolutionDashboard snapshots={snapshots} />}
+          {activePage === 'Positions' && <PositionsDashboard snapshots={snapshots} />}
+          {activePage === 'Dividends' && <DividendsDashboard snapshots={snapshots} />}
+          {activePage === 'Evolution' && <EvolutionDashboard snapshots={snapshots} />}
         </>
       )}
+      </div>
     </div>
   );
 };

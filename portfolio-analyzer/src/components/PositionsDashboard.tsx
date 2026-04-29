@@ -11,11 +11,10 @@ interface PositionsDashboardProps {
 }
 
 export const PositionsDashboard: React.FC<PositionsDashboardProps> = ({ snapshots }) => {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(snapshots.length - 1);
   const { getMetadata, getAllTags } = useStockMetadata();
 
-  const effectiveIndex = selectedIndex ?? snapshots.length - 1;
-  const snapshot = snapshots[effectiveIndex] ?? null;
+  const snapshot = snapshots[selectedIndex] ?? null;
 
   return (
     <>
